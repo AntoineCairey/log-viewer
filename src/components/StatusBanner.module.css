@@ -1,0 +1,103 @@
+.banner {
+  min-height: 64px;
+  box-sizing: border-box;
+  padding: 8px 24px;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px 24px;
+  border-bottom: 1px solid var(--border);
+  background: var(--bg-raised);
+}
+
+.identity {
+  display: flex;
+  align-items: baseline;
+  flex-wrap: wrap;
+  gap: 12px;
+}
+
+.identity h1 {
+  margin: 0;
+  font-size: 18px;
+  font-weight: 600;
+  letter-spacing: -0.01em;
+  color: var(--text);
+}
+
+.host,
+.api,
+.memory {
+  margin: 0;
+  font-size: 13px;
+  color: var(--text-muted);
+}
+
+.host {
+  font-family: var(--mono);
+  font-size: 12px;
+}
+
+.status {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 16px;
+}
+
+.memory span {
+  margin-left: 8px;
+  color: var(--text-faint);
+}
+
+.pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  height: 32px;
+  margin: 0;
+  padding: 0 12px;
+  border-radius: 16px;
+  border: 1px solid transparent;
+  font-size: 13px;
+  font-weight: 500;
+}
+
+.dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+}
+
+.pill[data-status='open'] {
+  color: var(--ok);
+  background: var(--ok-bg);
+  border-color: var(--ok-border);
+}
+
+.pill[data-status='open'] .dot {
+  background: var(--ok-strong);
+}
+
+.pill[data-status='connecting'],
+.pill[data-status='reconnecting'] {
+  color: var(--warn);
+  background: var(--warn-bg);
+  border-color: var(--warn-border);
+}
+
+.pill[data-status='connecting'] .dot,
+.pill[data-status='reconnecting'] .dot {
+  background: var(--warn);
+}
+
+.pill[data-status='missing'] {
+  color: var(--text-muted);
+  background: transparent;
+  border-color: var(--border-strong);
+}
+
+.pill[data-status='missing'] .dot {
+  background: var(--text-faint);
+}

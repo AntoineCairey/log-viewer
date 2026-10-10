@@ -1,0 +1,18 @@
+.app {
+  height: 100vh;
+  display: flex;
+  flex-direction: column;
+  background: var(--bg);
+  color: var(--text);
+}
+
+.missing {
+  margin: 24px;
+  color: var(--text-muted);
+}
+
+.workspace {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+}
