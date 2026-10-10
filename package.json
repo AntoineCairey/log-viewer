@@ -14,6 +14,7 @@
     "format:check": "prettier --check ."
   },
   "dependencies": {
+    "@tanstack/react-virtual": "^3.14.14",
     "react": "^19.2.8",
     "react-dom": "^19.2.8"
   },
