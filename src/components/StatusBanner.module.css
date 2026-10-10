@@ -27,8 +27,7 @@
 }
 
 .host,
-.api,
-.memory {
+.api {
   margin: 0;
   font-size: 13px;
   color: var(--text-muted);
@@ -44,11 +43,6 @@
   align-items: center;
   flex-wrap: wrap;
   gap: 16px;
-}
-
-.memory span {
-  margin-left: 8px;
-  color: var(--text-faint);
 }
 
 .pill {

@@ -2,7 +2,6 @@ import { useLayoutEffect, useRef, useState } from 'react'
 import { useVirtualizer } from '@tanstack/react-virtual'
 import { countNewerLogs } from '../lib/countNewerLogs.ts'
 import {
-  formatCount,
   formatDuration,
   formatLogDate,
   formatLogTime,
@@ -25,11 +24,15 @@ type LogTableProps = {
   onFilterRequest: (log: LogEntry) => void
   noMatch: boolean
   onClearFilters: () => void
+  paused: boolean
+  onPausedChange: (paused: boolean) => void
+  onPendingChange: (pending: number) => void
 }
 
 // Tableau virtualisé : seules les lignes visibles (plus une marge) sont dans le DOM.
-// Les nouveaux logs arrivent en haut. En haut, on les voit apparaître ; plus bas,
-// on décale le scroll d'autant pour que les lignes regardées ne bougent pas.
+// Les nouveaux logs arrivent en haut. En direct, en haut, on les voit apparaître.
+// En pause (bouton ou scroll vers le bas), on décale le scroll de leur hauteur
+// pour que les lignes regardées ne bougent pas. Le flux continue d'arriver.
 export function LogTable({
   logs,
   selectedId,
@@ -38,11 +41,31 @@ export function LogTable({
   onFilterRequest,
   noMatch,
   onClearFilters,
+  paused,
+  onPausedChange,
+  onPendingChange,
 }: LogTableProps) {
   const scrollRef = useRef<HTMLDivElement>(null)
   const previousFirstIdRef = useRef<string | null>(null)
+  const awayRef = useRef(false)
+  const pausedRef = useRef(paused)
+  const logsRef = useRef(logs)
+  const onPausedChangeRef = useRef(onPausedChange)
+  const onPendingChangeRef = useRef(onPendingChange)
   // Premier log au moment où l'utilisateur a quitté le haut. null : en direct.
   const [anchorId, setAnchorId] = useState<string | null>(null)
+  const anchorIdRef = useRef<string | null>(null)
+
+  pausedRef.current = paused
+  logsRef.current = logs
+  onPausedChangeRef.current = onPausedChange
+  onPendingChangeRef.current = onPendingChange
+
+  const setAnchor = (id: string | null) => {
+    if (anchorIdRef.current === id) return
+    anchorIdRef.current = id
+    setAnchorId(id)
+  }
 
   // useVirtualizer mutates its instance in place; React Compiler skips this
   // component on purpose. Silence until TanStack ships a compatible API.
@@ -56,8 +79,8 @@ export function LogTable({
     useFlushSync: false,
   })
 
-  // Avant l'affichage : si des logs ont été ajoutés en haut pendant qu'on
-  // regarde plus bas, on descend le scroll de leur hauteur.
+  // Avant l'affichage : si des logs ont été ajoutés en haut pendant la pause,
+  // on descend le scroll de leur hauteur.
   // Si l'ancien premier log a disparu, la liste a été filtrée : on revient
   // en haut, au lieu de traiter tout le tableau comme de nouveaux logs.
   useLayoutEffect(() => {
@@ -65,29 +88,69 @@ export function LogTable({
     const previousFirstId = previousFirstIdRef.current
     previousFirstIdRef.current = logs[0]?.id ?? null
 
-    if (!scroller || previousFirstId === null) return
+    if (!scroller || previousFirstId === null) {
+      if (pausedRef.current && anchorIdRef.current === null) {
+        setAnchor(logs[0]?.id ?? null)
+      }
+      return
+    }
 
     const added = logs.findIndex((log) => log.id === previousFirstId)
     if (added === -1) {
+      awayRef.current = false
       scroller.scrollTop = 0
-      setAnchorId(null)
+      setAnchor(null)
+      if (pausedRef.current) onPausedChangeRef.current(false)
       return
     }
-    if (scroller.scrollTop < LIVE_THRESHOLD_PX) return
-    if (added > 0) scroller.scrollTop += added * ROW_HEIGHT
+    // Ancre posée avant le scroll : le handler ne doit pas prendre le nouveau
+    // premier log pour repère si le lot arrive en même temps que la pause.
+    if (pausedRef.current && anchorIdRef.current === null) {
+      setAnchor(previousFirstId)
+    }
+    const atTop = scroller.scrollTop < LIVE_THRESHOLD_PX
+    if (atTop && !pausedRef.current) return
+    if (added > 0) {
+      awayRef.current = true
+      scroller.scrollTop += added * ROW_HEIGHT
+    }
   }, [logs])
+
+  // Le bouton Pause a le même effet que quitter le haut du tableau.
+  // Revenir en direct ramène en haut, donc en suivi automatique.
+  useLayoutEffect(() => {
+    if (paused) {
+      if (anchorIdRef.current === null) {
+        setAnchor(logsRef.current[0]?.id ?? null)
+      }
+      return
+    }
+
+    const scroller = scrollRef.current
+    awayRef.current = false
+    if (scroller && scroller.scrollTop >= LIVE_THRESHOLD_PX) {
+      scroller.scrollTo({ top: 0 })
+    }
+    setAnchor(null)
+  }, [paused])
 
   const handleScroll = () => {
     const scroller = scrollRef.current
     if (!scroller) return
 
-    const live = scroller.scrollTop < LIVE_THRESHOLD_PX
-    if (live && anchorId !== null) setAnchorId(null)
-    if (!live && anchorId === null) setAnchorId(logs[0]?.id ?? null)
-  }
+    const atTop = scroller.scrollTop < LIVE_THRESHOLD_PX
+    if (atTop) {
+      // Déjà en haut : un scroll parasite ne doit pas annuler la pause.
+      if (!awayRef.current) return
+      awayRef.current = false
+      setAnchor(null)
+      if (pausedRef.current) onPausedChangeRef.current(false)
+      return
+    }
 
-  const goLive = () => {
-    scrollRef.current?.scrollTo({ top: 0 })
+    awayRef.current = true
+    if (anchorIdRef.current === null) setAnchor(logsRef.current[0]?.id ?? null)
+    if (!pausedRef.current) onPausedChangeRef.current(true)
   }
 
   const items = virtualizer.getVirtualItems()
@@ -95,22 +158,12 @@ export function LogTable({
   const paddingBottom = virtualizer.getTotalSize() - (items.at(-1)?.end ?? 0)
   const pending = countNewerLogs(logs, anchorId)
 
+  useLayoutEffect(() => {
+    onPendingChangeRef.current(pending)
+  }, [pending])
+
   return (
     <div className={styles.frame}>
-      {anchorId !== null ? (
-        <div className={styles.caughtUp}>
-          <p>
-            {pending > 1
-              ? `${formatCount(pending)} nouveaux logs au-dessus`
-              : pending === 1
-                ? '1 nouveau log au-dessus'
-                : 'Défilement automatique en pause'}
-          </p>
-          <button type="button" onClick={goLive}>
-            Revenir en direct
-          </button>
-        </div>
-      ) : null}
       <div ref={scrollRef} className={styles.scroller} onScroll={handleScroll}>
         <table className={styles.table}>
           <thead>

@@ -5,6 +5,7 @@ import { LogTable } from './components/LogTable.tsx'
 import { ResultsBar } from './components/ResultsBar.tsx'
 import { StatusBanner } from './components/StatusBanner.tsx'
 import { useLogStream } from './hooks/useLogStream.ts'
+import { csvFilename, downloadCsv, logsToCsv } from './lib/exportLogs.ts'
 import {
   INITIAL_CRITERIA,
   filterLogs,
@@ -20,6 +21,9 @@ import styles from './App.module.css'
 export default function App() {
   const { logs, status, configured } = useLogStream()
   const [selected, setSelected] = useState<LogEntry | null>(null)
+  // La pause fige le tableau. Le flux, lui, continue d'arriver.
+  const [paused, setPaused] = useState(false)
+  const [pending, setPending] = useState(0)
   const [criteria, setCriteria] = useState<FilterCriteria>(INITIAL_CRITERIA)
   const [field, setField] = useState<TextField>('message')
   const [draft, setDraft] = useState('')
@@ -48,11 +52,7 @@ export default function App() {
 
   return (
     <div className={styles.app}>
-      <StatusBanner
-        status={status}
-        logCount={logs.length}
-        configured={configured}
-      />
+      <StatusBanner status={status} configured={configured} />
       {configured ? (
         <>
           <FilterBar
@@ -68,7 +68,15 @@ export default function App() {
             onPin={pin}
             onClear={clearFilters}
           />
-          <ResultsBar matched={filtered.length} total={logs.length} />
+          <ResultsBar
+            matched={filtered.length}
+            total={logs.length}
+            paused={paused}
+            pending={pending}
+            onPause={() => setPaused(true)}
+            onResume={() => setPaused(false)}
+            onExport={() => downloadCsv(csvFilename(), logsToCsv(filtered))}
+          />
           <div className={styles.workspace}>
             <LogTable
               logs={filtered}
@@ -78,6 +86,9 @@ export default function App() {
               onFilterRequest={(log) => filterExact('requestId', log.requestId)}
               noMatch={logs.length > 0 && filtered.length === 0}
               onClearFilters={clearFilters}
+              paused={paused}
+              onPausedChange={setPaused}
+              onPendingChange={setPending}
             />
             {selected ? (
               <LogDetail

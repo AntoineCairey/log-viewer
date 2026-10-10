@@ -6,35 +6,6 @@
   flex-direction: column;
 }
 
-.caughtUp {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 16px;
-  min-height: 44px;
-  padding: 6px 24px;
-  border-bottom: 1px solid var(--warn-border);
-  background: var(--warn-bg);
-  color: var(--warn);
-  font-size: 13px;
-}
-
-.caughtUp p {
-  margin: 0;
-}
-
-.caughtUp button {
-  height: 32px;
-  padding: 0 14px;
-  border: 0;
-  border-radius: 8px;
-  background: var(--warn);
-  color: #241800;
-  font: inherit;
-  font-weight: 600;
-  cursor: pointer;
-}
-
 .scroller {
   flex: 1;
   min-height: 0;

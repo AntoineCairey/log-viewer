@@ -1,11 +1,8 @@
 import type { ConnectionStatus } from '../hooks/useLogStream.ts'
-import { formatCount } from '../lib/formatLog.ts'
-import { LOG_BUFFER_LIMIT } from '../lib/prependCapped.ts'
 import styles from './StatusBanner.module.css'
 
 type StatusBannerProps = {
   status: ConnectionStatus
-  logCount: number
   configured: boolean
 }
 
@@ -25,11 +22,7 @@ function apiHost(): string {
   }
 }
 
-export function StatusBanner({
-  status,
-  logCount,
-  configured,
-}: StatusBannerProps) {
+export function StatusBanner({ status, configured }: StatusBannerProps) {
   const host = apiHost()
   const apiLabel = !configured
     ? 'URL manquante'
@@ -44,10 +37,6 @@ export function StatusBanner({
         {host ? <p className={styles.host}>{host}</p> : null}
       </div>
       <div className={styles.status}>
-        <p className={styles.memory}>
-          {formatCount(logCount)} logs en mémoire
-          <span>max {formatCount(LOG_BUFFER_LIMIT)}</span>
-        </p>
         <p className={styles.api}>{apiLabel}</p>
         <p
           className={styles.pill}

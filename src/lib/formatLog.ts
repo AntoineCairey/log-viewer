@@ -13,6 +13,15 @@ export function formatCount(count: number): string {
   return numberFormat.format(count)
 }
 
+// Indicateur de la barre de résultats. La pause ne coupe pas le flux :
+// elle fige le défilement, comme quand on quitte le haut du tableau.
+export function followStatusLabel(paused: boolean, pending: number): string {
+  if (!paused) return 'Défilement automatique actif'
+  if (pending <= 0) return 'Flux en pause'
+  if (pending === 1) return 'Flux en pause · 1 nouveau log en attente'
+  return `Flux en pause · ${formatCount(pending)} nouveaux logs en attente`
+}
+
 export function formatDuration(durationMs: number): string {
   return `${numberFormat.format(Math.round(durationMs))} ms`
 }
