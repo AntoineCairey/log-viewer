@@ -3,7 +3,7 @@ import { LOG_BUFFER_LIMIT, prependUniqueCapped } from '../lib/prependCapped.ts'
 import { parseLog } from '../lib/parseLog.ts'
 import { INITIAL_TAIL, reconnectTail } from '../lib/reconnectTail.ts'
 import { DEFAULT_RETRY_DELAY_MS, parseRetryAfter } from '../lib/retryAfter.ts'
-import { readSseData } from '../lib/sseBuffer.ts'
+import { readNdjsonLines } from '../lib/ndjsonBuffer.ts'
 import type { LogEntry } from '../types/log.ts'
 
 const FLUSH_INTERVAL_MS = 100
@@ -51,21 +51,21 @@ export function useLogStream(): UseLogStreamResult {
           const { done, value } = await reader.read()
           if (done) {
             pending += decoder.decode()
-            remember(readSseData(pending, true).data)
+            remember(readNdjsonLines(pending, true).lines)
             return
           }
 
           pending += decoder.decode(value, { stream: true })
-          const parsed = readSseData(pending)
+          const parsed = readNdjsonLines(pending)
           pending = parsed.rest
-          remember(parsed.data)
+          remember(parsed.lines)
         }
       } finally {
         reader.releaseLock()
       }
     }
 
-    // EventSource masque le statut et Retry-After, et abandonne sur un 503.
+    // fetch plutôt qu'un client SSE : on a besoin du statut 503 et de Retry-After.
     const run = async () => {
       let reconnecting = false
 
@@ -75,8 +75,8 @@ export function useLogStream(): UseLogStreamResult {
         setStatus(reconnecting ? 'reconnecting' : 'connecting')
 
         try {
-          const response = await fetch(`${baseUrl}/logs/stream?tail=${tail}`, {
-            headers: { Accept: 'text/event-stream' },
+          const response = await fetch(`${baseUrl}/logs/ndjson?tail=${tail}`, {
+            headers: { Accept: 'application/x-ndjson' },
             signal: abort.signal,
           })
           if (abort.signal.aborted) return
