@@ -1,14 +1,50 @@
-import { useState } from 'react'
+import { useDeferredValue, useMemo, useState } from 'react'
+import { FilterBar } from './components/FilterBar.tsx'
 import { LogDetail } from './components/LogDetail.tsx'
 import { LogTable } from './components/LogTable.tsx'
+import { ResultsBar } from './components/ResultsBar.tsx'
 import { StatusBanner } from './components/StatusBanner.tsx'
 import { useLogStream } from './hooks/useLogStream.ts'
+import {
+  INITIAL_CRITERIA,
+  filterLogs,
+  filtersFromForm,
+  pinText,
+  type ExactTextField,
+  type FilterCriteria,
+  type TextField,
+} from './lib/filterLogs.ts'
 import type { LogEntry } from './types/log.ts'
 import styles from './App.module.css'
 
 export default function App() {
   const { logs, status, configured } = useLogStream()
   const [selected, setSelected] = useState<LogEntry | null>(null)
+  const [criteria, setCriteria] = useState<FilterCriteria>(INITIAL_CRITERIA)
+  const [field, setField] = useState<TextField>('message')
+  const [draft, setDraft] = useState('')
+  // Le brouillon filtre tout de suite. useDeferredValue laisse React repousser
+  // ce calcul si un lot de logs arrive en même temps que la frappe.
+  const deferredDraft = useDeferredValue(draft)
+  const filters = useMemo(() => filtersFromForm(criteria), [criteria])
+  const filtered = useMemo(
+    () => filterLogs(logs, filters, { field, value: deferredDraft }),
+    [logs, filters, field, deferredDraft],
+  )
+
+  const pin = (nextField: TextField, value: string, exact: boolean) => {
+    setCriteria((current) => pinText(current, nextField, value, exact))
+    setDraft('')
+  }
+
+  const filterExact = (nextField: ExactTextField, value: string) => {
+    pin(nextField, value, true)
+  }
+
+  const clearFilters = () => {
+    setCriteria(INITIAL_CRITERIA)
+    setDraft('')
+  }
 
   return (
     <div className={styles.app}>
@@ -18,16 +54,40 @@ export default function App() {
         configured={configured}
       />
       {configured ? (
-        <div className={styles.workspace}>
-          <LogTable
+        <>
+          <FilterBar
             logs={logs}
-            selectedId={selected?.id ?? null}
-            onSelect={setSelected}
+            criteria={criteria}
+            filters={filters}
+            field={field}
+            draft={draft}
+            deferredDraft={deferredDraft}
+            onCriteria={setCriteria}
+            onField={setField}
+            onDraft={setDraft}
+            onPin={pin}
+            onClear={clearFilters}
           />
-          {selected ? (
-            <LogDetail log={selected} onClose={() => setSelected(null)} />
-          ) : null}
-        </div>
+          <ResultsBar matched={filtered.length} total={logs.length} />
+          <div className={styles.workspace}>
+            <LogTable
+              logs={filtered}
+              selectedId={selected?.id ?? null}
+              onSelect={setSelected}
+              onFilterUser={(log) => filterExact('userId', String(log.userId))}
+              onFilterRequest={(log) => filterExact('requestId', log.requestId)}
+              noMatch={logs.length > 0 && filtered.length === 0}
+              onClearFilters={clearFilters}
+            />
+            {selected ? (
+              <LogDetail
+                log={selected}
+                onClose={() => setSelected(null)}
+                onFilter={filterExact}
+              />
+            ) : null}
+          </div>
+        </>
       ) : (
         <p className={styles.missing}>
           Renseigner VITE_LOGS_API_URL dans .env, puis relancer le serveur.

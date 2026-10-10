@@ -6,6 +6,12 @@
   --text-faint: #8a94a3;
   --border: #232b36;
   --border-strong: #3a4552;
+  --control-border: #2c3644;
+  --surface: #161c24;
+  --menu: #1b232e;
+  --accent: #4a90e2;
+  --accent-bg: rgba(74, 144, 226, 0.16);
+  --accent-text: #cfe4ff;
   --row-line: #1a222c;
   --mono: 'JetBrains Mono', ui-monospace, Consolas, monospace;
   --ok: #8fe3b1;

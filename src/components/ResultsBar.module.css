@@ -1,0 +1,21 @@
+.bar {
+  min-height: 48px;
+  box-sizing: border-box;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 4px 14px;
+  padding: 6px 24px;
+  border-bottom: 1px solid var(--border);
+  background: var(--bg-raised);
+}
+
+.count {
+  font-size: 14px;
+  font-weight: 600;
+}
+
+.memory {
+  font-size: 13px;
+  color: var(--text-muted);
+}

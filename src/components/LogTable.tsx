@@ -21,17 +21,32 @@ type LogTableProps = {
   logs: readonly LogEntry[]
   selectedId: string | null
   onSelect: (log: LogEntry) => void
+  onFilterUser: (log: LogEntry) => void
+  onFilterRequest: (log: LogEntry) => void
+  noMatch: boolean
+  onClearFilters: () => void
 }
 
 // Tableau virtualisé : seules les lignes visibles (plus une marge) sont dans le DOM.
 // Les nouveaux logs arrivent en haut. En haut, on les voit apparaître ; plus bas,
 // on décale le scroll d'autant pour que les lignes regardées ne bougent pas.
-export function LogTable({ logs, selectedId, onSelect }: LogTableProps) {
+export function LogTable({
+  logs,
+  selectedId,
+  onSelect,
+  onFilterUser,
+  onFilterRequest,
+  noMatch,
+  onClearFilters,
+}: LogTableProps) {
   const scrollRef = useRef<HTMLDivElement>(null)
   const previousFirstIdRef = useRef<string | null>(null)
   // Premier log au moment où l'utilisateur a quitté le haut. null : en direct.
   const [anchorId, setAnchorId] = useState<string | null>(null)
 
+  // useVirtualizer mutates its instance in place; React Compiler skips this
+  // component on purpose. Silence until TanStack ships a compatible API.
+  // eslint-disable-next-line react-hooks/incompatible-library -- TanStack Virtual
   const virtualizer = useVirtualizer({
     count: logs.length,
     getScrollElement: () => scrollRef.current,
@@ -43,15 +58,22 @@ export function LogTable({ logs, selectedId, onSelect }: LogTableProps) {
 
   // Avant l'affichage : si des logs ont été ajoutés en haut pendant qu'on
   // regarde plus bas, on descend le scroll de leur hauteur.
+  // Si l'ancien premier log a disparu, la liste a été filtrée : on revient
+  // en haut, au lieu de traiter tout le tableau comme de nouveaux logs.
   useLayoutEffect(() => {
     const scroller = scrollRef.current
     const previousFirstId = previousFirstIdRef.current
     previousFirstIdRef.current = logs[0]?.id ?? null
 
     if (!scroller || previousFirstId === null) return
-    if (scroller.scrollTop < LIVE_THRESHOLD_PX) return
 
-    const added = countNewerLogs(logs, previousFirstId)
+    const added = logs.findIndex((log) => log.id === previousFirstId)
+    if (added === -1) {
+      scroller.scrollTop = 0
+      setAnchorId(null)
+      return
+    }
+    if (scroller.scrollTop < LIVE_THRESHOLD_PX) return
     if (added > 0) scroller.scrollTop += added * ROW_HEIGHT
   }, [logs])
 
@@ -113,12 +135,22 @@ export function LogTable({ logs, selectedId, onSelect }: LogTableProps) {
                   log={log}
                   selected={log.id === selectedId}
                   onSelect={onSelect}
+                  onFilterUser={onFilterUser}
+                  onFilterRequest={onFilterRequest}
                 />
               ) : null
             })}
             {paddingBottom > 0 ? <SpacerRow height={paddingBottom} /> : null}
           </tbody>
         </table>
+        {noMatch ? (
+          <div className={styles.empty}>
+            <p>Aucun log ne correspond à ces filtres</p>
+            <button type="button" onClick={onClearFilters}>
+              Tout effacer
+            </button>
+          </div>
+        ) : null}
       </div>
     </div>
   )
@@ -137,10 +169,14 @@ function LogRow({
   log,
   selected,
   onSelect,
+  onFilterUser,
+  onFilterRequest,
 }: {
   log: LogEntry
   selected: boolean
   onSelect: (log: LogEntry) => void
+  onFilterUser: (log: LogEntry) => void
+  onFilterRequest: (log: LogEntry) => void
 }) {
   const heavy = log.level === 'error' || log.level === 'critical'
   const slow = log.durationMs >= 1500
@@ -176,8 +212,32 @@ function LogRow({
       <td className={styles.status} data-tone={httpStatusTone(log.httpStatus)}>
         {log.httpStatus}
       </td>
-      <td className={styles.mono}>{log.userId}</td>
-      <td className={styles.mono}>{log.requestId}</td>
+      <td>
+        <button
+          type="button"
+          className={styles.cellButton}
+          title="Filtrer sur cet utilisateur"
+          onClick={(event) => {
+            event.stopPropagation()
+            onFilterUser(log)
+          }}
+        >
+          {log.userId}
+        </button>
+      </td>
+      <td>
+        <button
+          type="button"
+          className={styles.cellButton}
+          title="Filtrer sur cette requête"
+          onClick={(event) => {
+            event.stopPropagation()
+            onFilterRequest(log)
+          }}
+        >
+          {log.requestId}
+        </button>
+      </td>
     </tr>
   )
 }

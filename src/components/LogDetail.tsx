@@ -6,6 +6,7 @@ import {
   formatLogTime,
   httpStatusTone,
 } from '../lib/formatLog.ts'
+import type { ExactTextField } from '../lib/filterLogs.ts'
 import type { LogEntry } from '../types/log.ts'
 import styles from './LogDetail.module.css'
 
@@ -14,13 +15,14 @@ const ICON_SIZE = 14
 type LogDetailProps = {
   log: LogEntry
   onClose: () => void
+  onFilter: (field: ExactTextField, value: string) => void
 }
 
 type CopiedField = 'message' | 'userId' | 'requestId' | 'logId' | 'json'
 
 // Panneau fixe à côté du tableau : il a son propre défilement.
-// Les boutons « filtrer » sont en place, branchés plus tard.
-export function LogDetail({ log, onClose }: LogDetailProps) {
+// Chaque entonnoir épingle un filtre exact sur la valeur affichée.
+export function LogDetail({ log, onClose, onFilter }: LogDetailProps) {
   const [jsonOpen, setJsonOpen] = useState(false)
   const [copied, setCopied] = useState<CopiedField | null>(null)
   const json = JSON.stringify(toRawLog(log), null, 2)
@@ -61,6 +63,7 @@ export function LogDetail({ log, onClose }: LogDetailProps) {
           filterLabel="Filtrer sur ce message"
           copied={copied === 'message'}
           onCopy={() => copy('message', log.message)}
+          onFilter={() => onFilter('message', log.message)}
         />
       </div>
       <p className={styles.service}>{log.service}</p>
@@ -77,6 +80,7 @@ export function LogDetail({ log, onClose }: LogDetailProps) {
           filterLabel="Filtrer sur cet utilisateur"
           copied={copied === 'userId'}
           onCopy={() => copy('userId', String(log.userId))}
+          onFilter={() => onFilter('userId', String(log.userId))}
         />
       </Field>
       <Field label="Request ID" value={log.requestId}>
@@ -85,6 +89,7 @@ export function LogDetail({ log, onClose }: LogDetailProps) {
           filterLabel="Filtrer sur cette requête"
           copied={copied === 'requestId'}
           onCopy={() => copy('requestId', log.requestId)}
+          onFilter={() => onFilter('requestId', log.requestId)}
         />
       </Field>
       <Field label="Log ID" value={log.id} wrap>
@@ -93,6 +98,7 @@ export function LogDetail({ log, onClose }: LogDetailProps) {
           filterLabel="Filtrer sur ce log"
           copied={copied === 'logId'}
           onCopy={() => copy('logId', log.id)}
+          onFilter={() => onFilter('logId', log.id)}
         />
       </Field>
 
@@ -177,11 +183,13 @@ function Actions({
   filterLabel,
   copied,
   onCopy,
+  onFilter,
 }: {
   copyLabel: string
   filterLabel: string
   copied: boolean
   onCopy: () => void
+  onFilter: () => void
 }) {
   return (
     <div className={styles.actions}>
@@ -203,6 +211,7 @@ function Actions({
         className={styles.iconButton}
         aria-label={filterLabel}
         title={filterLabel}
+        onClick={onFilter}
       >
         <Funnel size={ICON_SIZE} aria-hidden="true" />
       </button>

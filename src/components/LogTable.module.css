@@ -127,13 +127,41 @@
 }
 
 .table tr.selected {
-  outline: 1px solid #4a90e2;
+  outline: 1px solid var(--accent);
   outline-offset: -1px;
   background: #1e2a38;
 }
 
 .spacer td {
   padding: 0;
+}
+
+.empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+  padding: 48px 24px;
+  color: var(--text-muted);
+}
+
+.empty p {
+  margin: 0;
+  font-size: 15px;
+  font-weight: 500;
+  color: var(--text);
+}
+
+.empty button {
+  height: 40px;
+  padding: 0 16px;
+  border: 1px solid var(--control-border);
+  border-radius: 8px;
+  background: transparent;
+  color: var(--text);
+  font: inherit;
+  font-size: 14px;
+  cursor: pointer;
 }
 
 .message {
@@ -197,9 +225,26 @@
 .mono,
 .duration,
 .slow,
-.status {
+.status,
+.cellButton {
   font-family: var(--mono);
   font-size: 13px;
+}
+
+.cellButton {
+  max-width: 100%;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: var(--text-muted);
+  cursor: pointer;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.cellButton:hover {
+  text-decoration: underline;
 }
 
 .service,
