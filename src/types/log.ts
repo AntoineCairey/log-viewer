@@ -8,6 +8,7 @@ export const LOG_LEVELS = [
 
 export type LogLevel = (typeof LOG_LEVELS)[number]
 
+// Log validé. Les noms sont en camelCase ; le JSON de l'API reste en snake_case.
 export type LogEntry = {
   id: string
   timestamp: string

@@ -17,6 +17,8 @@ ul {
   list-style: none;
   margin: 0;
   padding: 0;
+  /* Les nouvelles lignes sont insérées en haut : ne pas suivre l'ancien contenu. */
+  overflow-anchor: none;
 }
 
 li {

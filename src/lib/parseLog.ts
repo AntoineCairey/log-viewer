@@ -14,6 +14,8 @@ function isInteger(value: unknown): value is number {
   return typeof value === 'number' && Number.isInteger(value)
 }
 
+// Un message de l'API devient un LogEntry, ou null s'il est illisible.
+// L'appelant ignore le null : un message cassé ne coupe pas le flux.
 export function parseLog(raw: string): LogEntry | null {
   let data: unknown
   try {

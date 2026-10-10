@@ -4,7 +4,7 @@ import type { LogEntry } from './types/log.ts'
 const STATUS_LABEL: Record<ConnectionStatus, string> = {
   connecting: 'Connexion…',
   open: 'Connecté',
-  error: 'Connexion interrompue',
+  reconnecting: 'Reconnexion…',
 }
 
 function formatTime(timestamp: string): string {
@@ -23,7 +23,7 @@ function formatLog(entry: LogEntry): string {
 }
 
 export default function App() {
-  const { logs, status, droppedCount, configured } = useLogStream()
+  const { logs, status, configured } = useLogStream()
 
   if (!configured) {
     return (
@@ -37,8 +37,7 @@ export default function App() {
   return (
     <>
       <p>
-        {STATUS_LABEL[status]} — {logs.length} logs — messages ignorés :{' '}
-        {droppedCount}
+        {STATUS_LABEL[status]} — {logs.length} logs
       </p>
       <ul>
         {logs.map((entry) => (
