@@ -1,0 +1,252 @@
+.panel {
+  /* Largeur fixe : le tableau rétrécit, le panneau reste toujours entier. */
+  flex: 0 0 340px;
+  min-height: 0;
+  box-sizing: border-box;
+  padding: 16px 20px;
+  overflow: auto;
+  border-left: 1px solid var(--border);
+  background: var(--bg-raised);
+}
+
+.header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  margin-bottom: 16px;
+}
+
+.header h2 {
+  margin: 0;
+  font-size: 15px;
+  font-weight: 600;
+}
+
+.close {
+  width: 36px;
+  height: 36px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border: 0;
+  background: transparent;
+  color: var(--text-muted);
+  cursor: pointer;
+}
+
+.meta {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-bottom: 10px;
+}
+
+.level {
+  display: inline-flex;
+  align-items: center;
+  height: 22px;
+  padding: 0 8px;
+  border: 1px solid transparent;
+  border-radius: 4px;
+  font-family: var(--mono);
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.level[data-level='debug'] {
+  color: var(--text-muted);
+  border-color: var(--border-strong);
+}
+
+.level[data-level='info'] {
+  color: var(--info);
+  background: var(--info-bg);
+}
+
+.level[data-level='warning'] {
+  color: var(--warn);
+  background: var(--warn-bg);
+}
+
+.level[data-level='error'] {
+  color: var(--error);
+  background: var(--error-bg);
+  border-color: var(--error-border);
+}
+
+.level[data-level='critical'] {
+  color: var(--critical-text);
+  background: var(--critical);
+}
+
+.when,
+.service,
+.fieldLabel {
+  color: var(--text-muted);
+}
+
+.when {
+  font-family: var(--mono);
+  font-size: 13px;
+}
+
+.messageRow,
+.field {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.messageRow {
+  align-items: flex-start;
+}
+
+.message {
+  flex: 1;
+  min-width: 0;
+  margin: 0;
+  font-size: 18px;
+  font-weight: 600;
+  line-height: 1.35;
+}
+
+.service {
+  margin: 8px 0 14px;
+  font-size: 13px;
+}
+
+.field {
+  min-height: 40px;
+  font-size: 13px;
+}
+
+.fieldLabel {
+  width: 88px;
+  flex: none;
+}
+
+.fieldValue,
+.fieldValueWrap {
+  flex: 1;
+  min-width: 0;
+  font-family: var(--mono);
+  font-size: 13px;
+}
+
+.fieldValue {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* UUID sans espace : on autorise la coupure n'importe où pour l'afficher en entier. */
+.fieldValueWrap {
+  padding: 6px 0;
+  overflow-wrap: anywhere;
+}
+
+.fieldValue[data-tone='ok'] {
+  color: var(--ok-strong);
+}
+
+.fieldValue[data-tone='client'] {
+  color: var(--warn);
+}
+
+.fieldValue[data-tone='server'] {
+  color: var(--error);
+}
+
+.actions {
+  display: flex;
+  gap: 4px;
+  flex: none;
+}
+
+.iconButton,
+.copyJson,
+.jsonToggle,
+.close {
+  font: inherit;
+}
+
+.iconButton {
+  width: 32px;
+  height: 32px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid var(--border-strong);
+  border-radius: 6px;
+  background: transparent;
+  color: var(--text-muted);
+  cursor: pointer;
+}
+
+.iconButton:hover,
+.close:hover {
+  background: rgba(255, 255, 255, 0.08);
+  color: var(--text);
+}
+
+.json {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  margin-top: 16px;
+  padding-top: 8px;
+  border-top: 1px solid var(--border);
+}
+
+.jsonToggle {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  height: 40px;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: var(--text-muted);
+  font-size: 13px;
+  cursor: pointer;
+}
+
+.copyJson {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  height: 32px;
+  padding: 0 10px;
+  border: 1px solid var(--border-strong);
+  border-radius: 6px;
+  background: transparent;
+  color: #c3cbd6;
+  font-size: 12px;
+  font-weight: 500;
+  cursor: pointer;
+}
+
+.chevron,
+.chevronOpen {
+  transform: rotate(0deg);
+}
+
+.chevronOpen {
+  transform: rotate(90deg);
+}
+
+.raw {
+  margin: 8px 0 0;
+  padding: 12px;
+  border-radius: 8px;
+  background: #0b1015;
+  color: #b6bfcc;
+  font-family: var(--mono);
+  font-size: 12px;
+  line-height: 1.5;
+  white-space: pre-wrap;
+  word-break: break-all;
+}

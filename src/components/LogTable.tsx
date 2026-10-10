@@ -6,6 +6,7 @@ import {
   formatDuration,
   formatLogDate,
   formatLogTime,
+  formatService,
   httpStatusTone,
 } from '../lib/formatLog.ts'
 import type { LogEntry } from '../types/log.ts'
@@ -18,12 +19,14 @@ const LIVE_THRESHOLD_PX = 4
 
 type LogTableProps = {
   logs: readonly LogEntry[]
+  selectedId: string | null
+  onSelect: (log: LogEntry) => void
 }
 
 // Tableau virtualisé : seules les lignes visibles (plus une marge) sont dans le DOM.
 // Les nouveaux logs arrivent en haut. En haut, on les voit apparaître ; plus bas,
 // on décale le scroll d'autant pour que les lignes regardées ne bougent pas.
-export function LogTable({ logs }: LogTableProps) {
+export function LogTable({ logs, selectedId, onSelect }: LogTableProps) {
   const scrollRef = useRef<HTMLDivElement>(null)
   const previousFirstIdRef = useRef<string | null>(null)
   // Premier log au moment où l'utilisateur a quitté le haut. null : en direct.
@@ -104,7 +107,14 @@ export function LogTable({ logs }: LogTableProps) {
             {paddingTop > 0 ? <SpacerRow height={paddingTop} /> : null}
             {items.map((item) => {
               const log = logs[item.index]
-              return log ? <LogRow key={item.key} log={log} /> : null
+              return log ? (
+                <LogRow
+                  key={item.key}
+                  log={log}
+                  selected={log.id === selectedId}
+                  onSelect={onSelect}
+                />
+              ) : null
             })}
             {paddingBottom > 0 ? <SpacerRow height={paddingBottom} /> : null}
           </tbody>
@@ -117,18 +127,32 @@ export function LogTable({ logs }: LogTableProps) {
 // Ligne vide qui remplace les lignes non rendues, pour garder la bonne hauteur de scroll.
 function SpacerRow({ height }: { height: number }) {
   return (
-    <tr aria-hidden="true" className={styles.spacer}>
-      <td colSpan={COLUMN_COUNT} style={{ height }} />
+    <tr aria-hidden="true" className={styles.spacer} style={{ height }}>
+      <td colSpan={COLUMN_COUNT} />
     </tr>
   )
 }
 
-function LogRow({ log }: { log: LogEntry }) {
+function LogRow({
+  log,
+  selected,
+  onSelect,
+}: {
+  log: LogEntry
+  selected: boolean
+  onSelect: (log: LogEntry) => void
+}) {
   const heavy = log.level === 'error' || log.level === 'critical'
   const slow = log.durationMs >= 1500
 
   return (
-    <tr className={heavy ? styles.heavy : undefined}>
+    <tr
+      className={[selected ? styles.selected : '', heavy ? styles.heavy : '']
+        .filter(Boolean)
+        .join(' ')}
+      aria-selected={selected}
+      onClick={() => onSelect(log)}
+    >
       <td>
         <span className={styles.time}>
           <span>{formatLogDate(log.timestamp)}</span>
@@ -140,8 +164,12 @@ function LogRow({ log }: { log: LogEntry }) {
           {log.level}
         </span>
       </td>
-      <td className={styles.service}>{log.service}</td>
-      <td>{log.message}</td>
+      <td className={styles.service} title={log.service}>
+        {formatService(log.service)}
+      </td>
+      <td>
+        <span className={styles.message}>{log.message}</span>
+      </td>
       <td className={slow ? styles.slow : styles.duration}>
         {formatDuration(log.durationMs)}
       </td>

@@ -14,14 +14,12 @@ export function formatCount(count: number): string {
 }
 
 export function formatDuration(durationMs: number): string {
-  if (durationMs >= 1000) {
-    const seconds = (durationMs / 1000).toLocaleString('fr-FR', {
-      minimumFractionDigits: 2,
-      maximumFractionDigits: 2,
-    })
-    return `${seconds} s`
-  }
   return `${numberFormat.format(Math.round(durationMs))} ms`
+}
+
+// Tous les services finissent par « -service » : le suffixe n'apporte rien dans le tableau.
+export function formatService(service: string): string {
+  return service.replace(/-service$/, '')
 }
 
 export function formatLogDate(timestamp: string): string {

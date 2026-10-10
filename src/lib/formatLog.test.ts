@@ -1,13 +1,20 @@
 import { describe, expect, it } from 'vitest'
-import { formatDuration, httpStatusTone } from './formatLog.ts'
+import { formatDuration, formatService, httpStatusTone } from './formatLog.ts'
 
 describe('formatDuration', () => {
-  it('affiche les durées courtes en millisecondes', () => {
+  it('affiche toujours les durées en millisecondes', () => {
     expect(formatDuration(227)).toBe('227 ms')
+    expect(formatDuration(1535.4)).toBe('1\u202f535 ms')
+  })
+})
+
+describe('formatService', () => {
+  it('retire le suffixe -service', () => {
+    expect(formatService('notification-service')).toBe('notification')
   })
 
-  it('affiche les durées longues en secondes', () => {
-    expect(formatDuration(1535)).toBe('1,54 s')
+  it('laisse les autres noms intacts', () => {
+    expect(formatService('gateway')).toBe('gateway')
   })
 })
 
