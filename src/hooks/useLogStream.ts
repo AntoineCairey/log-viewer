@@ -16,7 +16,7 @@ type UseLogStreamResult = {
   configured: boolean
 }
 
-// Connexion au flux, mise à jour par lots, plafond de 50 000, reconnexion.
+// Connexion au flux, mise à jour par lots, plafond de 5 000, reconnexion.
 // `logs` commence par le plus récent.
 export function useLogStream(): UseLogStreamResult {
   const [logs, setLogs] = useState<LogEntry[]>([])

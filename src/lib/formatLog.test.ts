@@ -25,7 +25,7 @@ describe('formatService', () => {
 
 describe('followStatusLabel', () => {
   it('distingue le direct de la pause, et accorde le compteur', () => {
-    expect(followStatusLabel(false, 4)).toBe('Défilement automatique actif')
+    expect(followStatusLabel(false, 4)).toBe('Flux en direct')
     expect(followStatusLabel(true, 0)).toBe('Flux en pause')
     expect(followStatusLabel(true, 1)).toBe(
       'Flux en pause · 1 nouveau log en attente',

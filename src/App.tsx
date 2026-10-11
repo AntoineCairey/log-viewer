@@ -7,6 +7,7 @@ import { ResultsBar } from './components/ResultsBar.tsx'
 import { StatusBanner } from './components/StatusBanner.tsx'
 import { useLogStream } from './hooks/useLogStream.ts'
 import { csvFilename, downloadCsv, logsToCsv } from './lib/exportLogs.ts'
+import { logsAtPause } from './lib/logsAtPause.ts'
 import {
   INITIAL_CRITERIA,
   criteriaWithCustomRange,
@@ -21,12 +22,15 @@ import type { LogEntry } from './types/log.ts'
 import styles from './App.module.css'
 
 // Croise le buffer du flux avec les filtres, puis le distribue aux vues.
-// Le tableau et l'export reçoivent `filtered`. Le graphique reçoit `chartLogs`.
+// Le tableau et l'export reçoivent `filtered`. Le graphique reçoit `chartSource`,
+// figé au clic sur Pause, et `chartLogs` pour les courbes.
 export default function App() {
   const { logs, status, configured } = useLogStream()
   const [selected, setSelected] = useState<LogEntry | null>(null)
-  // La pause fige le tableau. Le flux, lui, continue d'arriver.
+  // Le bouton Pause fige la liste et le graphique. Le flux continue d'arriver.
+  // Le scroll ne suspend que le défilement de la liste : LogTable le gère seul.
   const [paused, setPaused] = useState(false)
+  const [pauseHeadId, setPauseHeadId] = useState<string | null>(null)
   const [pending, setPending] = useState(0)
   const [criteria, setCriteria] = useState<FilterCriteria>(INITIAL_CRITERIA)
   const [field, setField] = useState<TextField>('message')
@@ -39,16 +43,31 @@ export default function App() {
     () => filterLogs(logs, filters, { field, value: deferredDraft }),
     [logs, filters, field, deferredDraft],
   )
+  // En pause, le graphique ignore les logs arrivés après le clic.
+  const chartSource = useMemo(
+    () => logsAtPause(logs, paused, pauseHeadId),
+    [logs, paused, pauseHeadId],
+  )
   // Les autres filtres modifient les courbes. La période, elle, recadre l'axe.
   const chartLogs = useMemo(
     () =>
       filterLogs(
-        logs,
+        chartSource,
         { ...filters, period: null },
         { field, value: deferredDraft },
       ),
-    [logs, filters, field, deferredDraft],
+    [chartSource, filters, field, deferredDraft],
   )
+
+  const pause = () => {
+    setPauseHeadId(logs[0]?.id ?? null)
+    setPaused(true)
+  }
+
+  const resume = () => {
+    setPauseHeadId(null)
+    setPaused(false)
+  }
 
   // Épingle la recherche comme filtre durable et vide le champ.
   // exact : égalité, depuis une cellule du tableau ou le panneau de détail.
@@ -89,12 +108,12 @@ export default function App() {
             total={logs.length}
             paused={paused}
             pending={pending}
-            onPause={() => setPaused(true)}
-            onResume={() => setPaused(false)}
+            onPause={pause}
+            onResume={resume}
             onExport={() => downloadCsv(csvFilename(), logsToCsv(filtered))}
           />
           <LogChart
-            logs={logs}
+            logs={chartSource}
             countedLogs={chartLogs}
             period={filters.period}
             onSelectRange={(from, to) =>
@@ -113,7 +132,6 @@ export default function App() {
               noMatch={logs.length > 0 && filtered.length === 0}
               onClearFilters={clearFilters}
               paused={paused}
-              onPausedChange={setPaused}
               onPendingChange={setPending}
             />
             {selected ? (

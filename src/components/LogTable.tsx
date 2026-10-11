@@ -1,3 +1,4 @@
+import { ArrowUp } from 'lucide-react'
 import { useLayoutEffect, useRef, useState } from 'react'
 import { useVirtualizer } from '@tanstack/react-virtual'
 import { countNewerLogs } from '../lib/countNewerLogs.ts'
@@ -25,14 +26,17 @@ type LogTableProps = {
   noMatch: boolean
   onClearFilters: () => void
   paused: boolean
-  onPausedChange: (paused: boolean) => void
   onPendingChange: (pending: number) => void
 }
 
 // Tableau virtualisé : seules les lignes visibles (plus une marge) sont dans le DOM.
 // Les nouveaux logs arrivent en haut. En direct, en haut, on les voit apparaître.
-// En pause (bouton ou scroll vers le bas), on décale le scroll de leur hauteur
-// pour que les lignes regardées ne bougent pas. Le flux continue d'arriver.
+// Deux façons de figer les lignes regardées, en décalant le scroll de la hauteur
+// des arrivées. Le flux continue d'arriver dans les deux cas.
+// - Scroll : seul le défilement s'arrête. Un bouton flottant, ou le retour tout
+//   en haut, le reprend. Le graphique, lui, reste en direct.
+// - Bouton Pause : la liste et le graphique sont figés. Seul « Revenir en direct »
+//   les relâche. Remonter en haut ne suffit pas.
 export function LogTable({
   logs,
   selectedId,
@@ -42,7 +46,6 @@ export function LogTable({
   noMatch,
   onClearFilters,
   paused,
-  onPausedChange,
   onPendingChange,
 }: LogTableProps) {
   const scrollRef = useRef<HTMLDivElement>(null)
@@ -52,15 +55,15 @@ export function LogTable({
   // sans se ré-abonner à chaque lot de logs.
   const pausedRef = useRef(paused)
   const logsRef = useRef(logs)
-  const onPausedChangeRef = useRef(onPausedChange)
   const onPendingChangeRef = useRef(onPendingChange)
+  // Vrai quand l'utilisateur a quitté le haut sans passer par le bouton Pause.
+  const [detached, setDetached] = useState(false)
   // Premier log au moment où l'utilisateur a quitté le haut. null : en direct.
   const [anchorId, setAnchorId] = useState<string | null>(null)
   const anchorIdRef = useRef<string | null>(null)
 
   pausedRef.current = paused
   logsRef.current = logs
-  onPausedChangeRef.current = onPausedChange
   onPendingChangeRef.current = onPendingChange
 
   const setAnchor = (id: string | null) => {
@@ -101,8 +104,13 @@ export function LogTable({
     if (added === -1) {
       awayRef.current = false
       scroller.scrollTop = 0
-      setAnchor(null)
-      if (pausedRef.current) onPausedChangeRef.current(false)
+      // Un filtre ne lève pas la pause : on reprend le suivi seulement en direct.
+      if (pausedRef.current) {
+        setAnchor(logs[0]?.id ?? null)
+      } else {
+        setAnchor(null)
+        setDetached(false)
+      }
       return
     }
     // Ancre posée avant le scroll : le handler ne doit pas prendre le nouveau
@@ -118,8 +126,7 @@ export function LogTable({
     }
   }, [logs])
 
-  // Le bouton Pause a le même effet que quitter le haut du tableau.
-  // Revenir en direct ramène en haut, donc en suivi automatique.
+  // Le bouton Pause fige la lecture. Revenir en direct ramène en haut.
   useLayoutEffect(() => {
     if (paused) {
       if (anchorIdRef.current === null) {
@@ -134,6 +141,7 @@ export function LogTable({
       scroller.scrollTo({ top: 0 })
     }
     setAnchor(null)
+    setDetached(false)
   }, [paused])
 
   const handleScroll = () => {
@@ -142,17 +150,29 @@ export function LogTable({
 
     const atTop = scroller.scrollTop < LIVE_THRESHOLD_PX
     if (atTop) {
-      // Déjà en haut : un scroll parasite ne doit pas annuler la pause.
+      // Déjà en haut : un scroll parasite ne doit pas reprendre le suivi.
       if (!awayRef.current) return
       awayRef.current = false
+      // La pause du bouton ne se lève qu'avec « Revenir en direct ».
+      if (pausedRef.current) return
       setAnchor(null)
-      if (pausedRef.current) onPausedChangeRef.current(false)
+      setDetached(false)
       return
     }
 
     awayRef.current = true
     if (anchorIdRef.current === null) setAnchor(logsRef.current[0]?.id ?? null)
-    if (!pausedRef.current) onPausedChangeRef.current(true)
+    if (!pausedRef.current) setDetached(true)
+  }
+
+  const resumeScroll = () => {
+    const scroller = scrollRef.current
+    awayRef.current = false
+    setAnchor(null)
+    setDetached(false)
+    if (scroller && scroller.scrollTop >= LIVE_THRESHOLD_PX) {
+      scroller.scrollTo({ top: 0 })
+    }
   }
 
   const items = virtualizer.getVirtualItems()
@@ -166,6 +186,16 @@ export function LogTable({
 
   return (
     <div className={styles.frame}>
+      {detached && !paused ? (
+        <button
+          type="button"
+          className={styles.resumeScroll}
+          onClick={resumeScroll}
+        >
+          <ArrowUp size={14} aria-hidden="true" />
+          Voir les nouveaux messages
+        </button>
+      ) : null}
       <div ref={scrollRef} className={styles.scroller} onScroll={handleScroll}>
         <table className={styles.table}>
           <thead>
