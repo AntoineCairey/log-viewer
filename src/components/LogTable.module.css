@@ -151,7 +151,7 @@
   line-height: 1.2;
 }
 
-.time span:last-child {
+.time span:first-child {
   color: var(--text-muted);
 }
 

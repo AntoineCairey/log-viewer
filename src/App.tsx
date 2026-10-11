@@ -1,5 +1,6 @@
 import { useDeferredValue, useMemo, useState } from 'react'
 import { FilterBar } from './components/FilterBar.tsx'
+import { LogChart } from './components/LogChart.tsx'
 import { LogDetail } from './components/LogDetail.tsx'
 import { LogTable } from './components/LogTable.tsx'
 import { ResultsBar } from './components/ResultsBar.tsx'
@@ -8,6 +9,7 @@ import { useLogStream } from './hooks/useLogStream.ts'
 import { csvFilename, downloadCsv, logsToCsv } from './lib/exportLogs.ts'
 import {
   INITIAL_CRITERIA,
+  criteriaWithCustomRange,
   filterLogs,
   filtersFromForm,
   pinText,
@@ -33,6 +35,16 @@ export default function App() {
   const filters = useMemo(() => filtersFromForm(criteria), [criteria])
   const filtered = useMemo(
     () => filterLogs(logs, filters, { field, value: deferredDraft }),
+    [logs, filters, field, deferredDraft],
+  )
+  // Les autres filtres modifient les courbes. La période, elle, recadre l'axe.
+  const chartLogs = useMemo(
+    () =>
+      filterLogs(
+        logs,
+        { ...filters, period: null },
+        { field, value: deferredDraft },
+      ),
     [logs, filters, field, deferredDraft],
   )
 
@@ -76,6 +88,16 @@ export default function App() {
             onPause={() => setPaused(true)}
             onResume={() => setPaused(false)}
             onExport={() => downloadCsv(csvFilename(), logsToCsv(filtered))}
+          />
+          <LogChart
+            logs={logs}
+            countedLogs={chartLogs}
+            period={filters.period}
+            onSelectRange={(from, to) =>
+              setCriteria((current) =>
+                criteriaWithCustomRange(current, from, to),
+              )
+            }
           />
           <div className={styles.workspace}>
             <LogTable

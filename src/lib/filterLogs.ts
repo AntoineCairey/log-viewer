@@ -214,6 +214,20 @@ export function filtersFromForm(criteria: FilterCriteria): Filters {
   }
 }
 
+export function criteriaWithCustomRange(
+  criteria: FilterCriteria,
+  from: number,
+  to: number,
+): FilterCriteria {
+  return {
+    ...criteria,
+    periodMode: 'custom',
+    lastMs: 0,
+    fromStr: formatDatetimeLocal(from),
+    toStr: formatDatetimeLocal(to),
+  }
+}
+
 export function filterLogs(
   logs: readonly LogEntry[],
   filters: Filters,
@@ -232,7 +246,7 @@ export function filterLogs(
       texts.every((text) => matchesText(log, text)),
   )
 
-  const bounds = periodBounds(filters.period, base)
+  const bounds = resolvePeriodBounds(filters.period, base)
   if (!bounds) return base
 
   return base.filter((log) => matchesPeriod(log, bounds))
@@ -411,7 +425,7 @@ function matchesText(log: LogEntry, filter: TextFilter): boolean {
   return filter.exact ? log.id === filter.value : includes(log.id, filter.value)
 }
 
-function periodBounds(
+export function resolvePeriodBounds(
   period: PeriodFilter | null,
   base: readonly LogEntry[],
 ): { from: number | null; to: number | null } | null {

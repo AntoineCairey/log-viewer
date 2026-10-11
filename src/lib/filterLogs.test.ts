@@ -3,12 +3,15 @@ import { formatCount } from './formatLog.ts'
 import {
   INITIAL_CRITERIA,
   activeChips,
+  criteriaWithCustomRange,
   durationFromForm,
   filterLogs,
   filtersFromForm,
+  formatDatetimeLocal,
   periodFromForm,
   pinText,
   removeChip,
+  resolvePeriodBounds,
   resultsCountLabel,
   toggleIn,
   type FilterCriteria,
@@ -307,6 +310,43 @@ describe('activeChips', () => {
 })
 
 describe('saisie période et durée', () => {
+  it('crée une période custom compatible avec le formulaire', () => {
+    const next = criteriaWithCustomRange(
+      INITIAL_CRITERIA,
+      origin + 5_000,
+      origin + 15_000,
+    )
+
+    expect(next).toMatchObject({
+      periodMode: 'custom',
+      lastMs: 0,
+      fromStr: formatDatetimeLocal(origin + 5_000),
+      toStr: formatDatetimeLocal(origin + 15_000),
+    })
+    expect(periodFromForm(next).period).toEqual({
+      kind: 'range',
+      from: origin + 5_000,
+      to: origin + 15_000,
+    })
+  })
+
+  it('résout les dernières secondes sur le log pertinent le plus récent', () => {
+    const base = [
+      log({ id: 'old', timestamp: at(0) }),
+      log({ id: 'new', timestamp: at(45_000) }),
+    ]
+    expect(resolvePeriodBounds({ kind: 'last', ms: 30_000 }, base)).toEqual({
+      from: origin + 15_000,
+      to: null,
+    })
+    expect(
+      resolvePeriodBounds(
+        { kind: 'range', from: null, to: origin + 20_000 },
+        base,
+      ),
+    ).toEqual({ from: null, to: origin + 20_000 })
+  })
+
   it('signale une fin avant le début sans l’appliquer', () => {
     const criteria: FilterCriteria = {
       ...INITIAL_CRITERIA,
