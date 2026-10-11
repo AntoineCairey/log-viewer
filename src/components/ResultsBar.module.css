@@ -1,0 +1,131 @@
+.bar {
+  min-height: 48px;
+  box-sizing: border-box;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 6px 24px;
+  padding: 6px 24px;
+  border-bottom: 1px solid var(--border);
+  background: var(--bg-raised);
+}
+
+.bar[data-paused='true'] {
+  border-bottom-color: rgba(242, 184, 75, 0.35);
+  background: rgba(242, 184, 75, 0.1);
+}
+
+.summary {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 4px 14px;
+}
+
+.count {
+  font-size: 14px;
+  font-weight: 600;
+}
+
+.memory {
+  font-size: 13px;
+  color: var(--text-muted);
+}
+
+.follow {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px 14px;
+}
+
+.followStatus {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  color: var(--ok);
+  font-size: 13px;
+  white-space: nowrap;
+}
+
+.followStatus[data-paused='true'] {
+  color: var(--warn);
+}
+
+.followDot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--ok-strong);
+}
+
+.followStatus[data-paused='true'] .followDot {
+  border-radius: 2px;
+  background: var(--warn);
+}
+
+.actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+}
+
+.pause,
+.goLive,
+.export,
+.chartToggle {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  height: 36px;
+  padding: 0 16px;
+  border-radius: 8px;
+  font: inherit;
+  font-size: 13px;
+  white-space: nowrap;
+  cursor: pointer;
+}
+
+.pause,
+.goLive {
+  border: 0;
+  font-weight: 600;
+}
+
+.pause {
+  background: var(--text);
+  color: var(--bg);
+}
+
+.goLive {
+  background: var(--warn);
+  color: #241800;
+}
+
+.export,
+.chartToggle {
+  border: 1px solid var(--control-border);
+  background: transparent;
+  color: var(--text);
+  font-weight: 500;
+}
+
+.pause:hover,
+.goLive:hover {
+  filter: brightness(1.08);
+}
+
+.export:hover,
+.chartToggle:hover {
+  background: rgba(255, 255, 255, 0.08);
+}
+
+.pause:focus-visible,
+.goLive:focus-visible,
+.export:focus-visible,
+.chartToggle:focus-visible {
+  outline: 2px solid #7db9ff;
+  outline-offset: 2px;
+}

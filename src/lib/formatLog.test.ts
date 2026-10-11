@@ -1,5 +1,10 @@
 import { describe, expect, it } from 'vitest'
-import { formatDuration, formatService, httpStatusTone } from './formatLog.ts'
+import {
+  followStatusLabel,
+  formatDuration,
+  formatService,
+  httpStatusTone,
+} from './formatLog.ts'
 
 describe('formatDuration', () => {
   it('affiche toujours les durées en millisecondes', () => {
@@ -15,6 +20,19 @@ describe('formatService', () => {
 
   it('laisse les autres noms intacts', () => {
     expect(formatService('gateway')).toBe('gateway')
+  })
+})
+
+describe('followStatusLabel', () => {
+  it('distingue le direct de la pause, et accorde le compteur', () => {
+    expect(followStatusLabel(false, 4)).toBe('Flux en direct')
+    expect(followStatusLabel(true, 0)).toBe('Flux en pause')
+    expect(followStatusLabel(true, 1)).toBe(
+      'Flux en pause · 1 nouveau log en attente',
+    )
+    expect(followStatusLabel(true, 134)).toBe(
+      'Flux en pause · 134 nouveaux logs en attente',
+    )
   })
 })
 

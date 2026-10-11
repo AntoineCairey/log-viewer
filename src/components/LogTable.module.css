@@ -1,4 +1,5 @@
 .frame {
+  position: relative;
   flex: 1;
   min-width: 0;
   min-height: 0;
@@ -6,33 +7,42 @@
   flex-direction: column;
 }
 
-.caughtUp {
-  display: flex;
+.resumeScroll {
+  position: absolute;
+  z-index: 2;
+  top: 44px;
+  left: 50%;
+  transform: translateX(-50%);
+  display: inline-flex;
   align-items: center;
-  justify-content: space-between;
-  gap: 16px;
-  min-height: 44px;
-  padding: 6px 24px;
-  border-bottom: 1px solid var(--warn-border);
-  background: var(--warn-bg);
-  color: var(--warn);
-  font-size: 13px;
-}
-
-.caughtUp p {
-  margin: 0;
-}
-
-.caughtUp button {
+  gap: 6px;
+  max-width: calc(100% - 32px);
   height: 32px;
   padding: 0 14px;
-  border: 0;
-  border-radius: 8px;
-  background: var(--warn);
-  color: #241800;
+  border: 1px solid rgba(74, 144, 226, 0.6);
+  border-radius: 999px;
+  /* Teinte accent posée sur un fond opaque : les lignes ne transparaissent pas. */
+  background:
+    linear-gradient(var(--accent-bg), var(--accent-bg)), var(--surface);
+  color: var(--accent-text);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
   font: inherit;
-  font-weight: 600;
+  font-size: 13px;
+  font-weight: 500;
+  white-space: nowrap;
   cursor: pointer;
+}
+
+.resumeScroll:hover {
+  border-color: var(--accent);
+  background:
+    linear-gradient(rgba(74, 144, 226, 0.26), rgba(74, 144, 226, 0.26)),
+    var(--surface);
+}
+
+.resumeScroll:focus-visible {
+  outline: 2px solid #7db9ff;
+  outline-offset: 2px;
 }
 
 .scroller {
@@ -44,11 +54,11 @@
 }
 
 /* Les colonnes gardent leur largeur. Le surplus se répartit en espacement,
-   plafonné vers 1 200 px (41 px entre les colonnes) ; au-delà, seule Request ID
-   s'élargit. En dessous de 912 px, le tableau défile. */
+   plafonné vers 1 211 px (41 px entre les colonnes) ; au-delà, seule Request ID
+   s'élargit. En dessous de 924 px, le tableau défile. */
 .table {
-  --columns: 120px 92px 124px 200px 92px 72px 80px minmax(132px, 1fr);
-  --column-gap: clamp(0px, calc((100% - 912px) / 7), 41px);
+  --columns: 132px 92px 124px 200px 92px 72px 80px minmax(132px, 1fr);
+  --column-gap: clamp(0px, calc((100% - 924px) / 7), 41px);
   display: block;
   width: 100%;
   min-width: max-content;
@@ -98,6 +108,11 @@
   text-transform: uppercase;
 }
 
+.table th:first-child,
+.table td:first-child {
+  padding-left: 24px;
+}
+
 .table th:nth-child(5),
 .table td:nth-child(5) {
   justify-content: flex-end;
@@ -127,13 +142,41 @@
 }
 
 .table tr.selected {
-  outline: 1px solid #4a90e2;
+  outline: 1px solid var(--accent);
   outline-offset: -1px;
   background: #1e2a38;
 }
 
 .spacer td {
   padding: 0;
+}
+
+.empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+  padding: 48px 24px;
+  color: var(--text-muted);
+}
+
+.empty p {
+  margin: 0;
+  font-size: 15px;
+  font-weight: 500;
+  color: var(--text);
+}
+
+.empty button {
+  height: 40px;
+  padding: 0 16px;
+  border: 1px solid var(--control-border);
+  border-radius: 8px;
+  background: transparent;
+  color: var(--text);
+  font: inherit;
+  font-size: 14px;
+  cursor: pointer;
 }
 
 .message {
@@ -152,7 +195,7 @@
   line-height: 1.2;
 }
 
-.time span:last-child {
+.time span:first-child {
   color: var(--text-muted);
 }
 
@@ -197,9 +240,26 @@
 .mono,
 .duration,
 .slow,
-.status {
+.status,
+.cellButton {
   font-family: var(--mono);
   font-size: 13px;
+}
+
+.cellButton {
+  max-width: 100%;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: var(--text-muted);
+  cursor: pointer;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.cellButton:hover {
+  text-decoration: underline;
 }
 
 .service,

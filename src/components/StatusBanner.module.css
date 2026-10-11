@@ -1,7 +1,7 @@
 .banner {
-  min-height: 64px;
+  min-height: 52px;
   box-sizing: border-box;
-  padding: 8px 24px;
+  padding: 6px 24px;
   display: flex;
   flex-wrap: wrap;
   align-items: center;
@@ -27,8 +27,7 @@
 }
 
 .host,
-.api,
-.memory {
+.api {
   margin: 0;
   font-size: 13px;
   color: var(--text-muted);
@@ -46,16 +45,11 @@
   gap: 16px;
 }
 
-.memory span {
-  margin-left: 8px;
-  color: var(--text-faint);
-}
-
 .pill {
   display: inline-flex;
   align-items: center;
   gap: 8px;
-  height: 32px;
+  height: 28px;
   margin: 0;
   padding: 0 12px;
   border-radius: 16px;

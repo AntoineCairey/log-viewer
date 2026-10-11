@@ -1,0 +1,8 @@
+services:
+  log-viewer:
+    build:
+      context: .
+      args:
+        VITE_LOGS_API_URL: ${VITE_LOGS_API_URL}
+    ports:
+      - '${PORT:-8080}:80'

@@ -1,5 +1,6 @@
-// Buffer affiché, du plus récent au plus ancien. L'API refuse aussi un tail > 5 000.
-export const LOG_BUFFER_LIMIT = 5000
+// Buffer affiché, du plus récent au plus ancien.
+// Le tail demandé à l'API est plafonné à part, dans reconnectTail.
+export const LOG_BUFFER_LIMIT = 5_000
 
 // Le lot arrive dans l'ordre d'émission. On le renverse pour le mettre devant,
 // puis on oublie la fin de la liste au-delà du plafond.

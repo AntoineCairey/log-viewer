@@ -1,6 +1,7 @@
 export const DEFAULT_RETRY_DELAY_MS = 5_000
 
-// Le 503 annonce combien de temps attendre avant de rouvrir le flux.
+// Retry-After : un délai en secondes, ou une date HTTP.
+// Sinon on attend DEFAULT_RETRY_DELAY_MS.
 export function parseRetryAfter(
   header: string | null,
   now = Date.now(),
