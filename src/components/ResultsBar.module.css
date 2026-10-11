@@ -74,7 +74,8 @@
 
 .pause,
 .goLive,
-.export {
+.export,
+.chartToggle {
   display: inline-flex;
   align-items: center;
   gap: 8px;
@@ -103,7 +104,8 @@
   color: #241800;
 }
 
-.export {
+.export,
+.chartToggle {
   border: 1px solid var(--control-border);
   background: transparent;
   color: var(--text);
@@ -115,13 +117,15 @@
   filter: brightness(1.08);
 }
 
-.export:hover {
+.export:hover,
+.chartToggle:hover {
   background: rgba(255, 255, 255, 0.08);
 }
 
 .pause:focus-visible,
 .goLive:focus-visible,
-.export:focus-visible {
+.export:focus-visible,
+.chartToggle:focus-visible {
   outline: 2px solid #7db9ff;
   outline-offset: 2px;
 }

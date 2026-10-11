@@ -1,6 +1,8 @@
 import { cleanup, fireEvent, render, screen } from '@testing-library/react'
+import { useState } from 'react'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import { LogChart } from './LogChart.tsx'
+import type { ChartBucketMs, LogChartGroup } from '../lib/logChartSeries.ts'
 import type { LogEntry } from '../types/log.ts'
 
 const origin = Date.parse('2026-01-15T10:00:00.000Z')
@@ -29,14 +31,7 @@ afterEach(cleanup)
 
 describe('LogChart', () => {
   it('affiche le tooltip de la tranche survolée', () => {
-    render(
-      <LogChart
-        logs={logs}
-        countedLogs={logs}
-        period={null}
-        onSelectRange={() => {}}
-      />,
-    )
+    renderChart()
     const layer = screen.getByLabelText(
       'Sélectionner une période en faisant glisser',
     )
@@ -50,14 +45,7 @@ describe('LogChart', () => {
 
   it('change de regroupement et remonte la plage glissée', () => {
     const onSelectRange = vi.fn()
-    render(
-      <LogChart
-        logs={logs}
-        countedLogs={logs}
-        period={null}
-        onSelectRange={onSelectRange}
-      />,
-    )
+    renderChart({ onSelectRange })
 
     fireEvent.change(screen.getByRole('combobox', { name: 'Regrouper par' }), {
       target: { value: 'service' },
@@ -101,6 +89,33 @@ describe('LogChart', () => {
     expect(onSelectRange).toHaveBeenCalledWith(origin + 3_000, origin + 12_000)
   })
 })
+
+function renderChart(
+  props: {
+    onSelectRange?: (from: number, to: number) => void
+  } = {},
+) {
+  const onSelectRange = props.onSelectRange ?? (() => {})
+
+  function Harness() {
+    const [group, setGroup] = useState<LogChartGroup>('level')
+    const [bucketMs, setBucketMs] = useState<ChartBucketMs>(5_000)
+    return (
+      <LogChart
+        logs={logs}
+        countedLogs={logs}
+        period={null}
+        group={group}
+        bucketMs={bucketMs}
+        onGroup={setGroup}
+        onBucketMs={setBucketMs}
+        onSelectRange={onSelectRange}
+      />
+    )
+  }
+
+  return render(<Harness />)
+}
 
 function mockRect(element: HTMLElement) {
   vi.spyOn(element, 'getBoundingClientRect').mockReturnValue({

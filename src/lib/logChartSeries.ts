@@ -6,7 +6,29 @@ import { LOG_LEVELS, type LogEntry, type LogLevel } from '../types/log.ts'
 // `countedLogs` est ce qu'on additionne. `window` zoome sur la période choisie.
 export const LOG_CHART_BUCKET_MS = 1_000
 
-export type LogChartGroup = 'total' | 'level' | 'service' | 'status'
+export const CHART_GROUPS = ['total', 'level', 'service', 'status'] as const
+
+export type LogChartGroup = (typeof CHART_GROUPS)[number]
+
+export const CHART_BUCKET_OPTIONS = [
+  { ms: 1_000, label: '1 s' },
+  { ms: 5_000, label: '5 s' },
+  { ms: 15_000, label: '15 s' },
+  { ms: 30_000, label: '30 s' },
+  { ms: 60_000, label: '1 min' },
+] as const
+
+export type ChartBucketMs = (typeof CHART_BUCKET_OPTIONS)[number]['ms']
+
+export function isLogChartGroup(value: unknown): value is LogChartGroup {
+  return (
+    typeof value === 'string' && CHART_GROUPS.some((group) => group === value)
+  )
+}
+
+export function isChartBucketMs(value: unknown): value is ChartBucketMs {
+  return CHART_BUCKET_OPTIONS.some((option) => option.ms === value)
+}
 
 export type LogChartSeries = {
   key: string

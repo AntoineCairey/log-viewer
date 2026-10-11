@@ -6,6 +6,7 @@ import { LogTable } from './components/LogTable.tsx'
 import { ResultsBar } from './components/ResultsBar.tsx'
 import { StatusBanner } from './components/StatusBanner.tsx'
 import { useLogStream } from './hooks/useLogStream.ts'
+import { useStoredState } from './hooks/useStoredState.ts'
 import { csvFilename, downloadCsv, logsToCsv } from './lib/exportLogs.ts'
 import { logsAtPause } from './lib/logsAtPause.ts'
 import {
@@ -15,11 +16,19 @@ import {
   filtersFromForm,
   pinText,
   type ExactTextField,
-  type FilterCriteria,
   type TextField,
 } from './lib/filterLogs.ts'
+import {
+  readChartPreferences,
+  readFilterCriteria,
+  writeChartPreferences,
+  writeFilterCriteria,
+} from './lib/viewerPreferences.ts'
 import type { LogEntry } from './types/log.ts'
 import styles from './App.module.css'
+
+// Masqué, le graphique n'est pas monté : ce tableau évite le second filtrage.
+const EMPTY_LOGS: readonly LogEntry[] = []
 
 // Croise le buffer du flux avec les filtres, puis le distribue aux vues.
 // Le tableau et l'export reçoivent `filtered`. Le graphique reçoit `chartSource`,
@@ -32,7 +41,14 @@ export default function App() {
   const [paused, setPaused] = useState(false)
   const [pauseHeadId, setPauseHeadId] = useState<string | null>(null)
   const [pending, setPending] = useState(0)
-  const [criteria, setCriteria] = useState<FilterCriteria>(INITIAL_CRITERIA)
+  const [criteria, setCriteria] = useStoredState(
+    readFilterCriteria,
+    writeFilterCriteria,
+  )
+  const [chart, setChart] = useStoredState(
+    readChartPreferences,
+    writeChartPreferences,
+  )
   const [field, setField] = useState<TextField>('message')
   const [draft, setDraft] = useState('')
   // Le brouillon filtre tout de suite. useDeferredValue laisse React repousser
@@ -44,19 +60,22 @@ export default function App() {
     [logs, filters, field, deferredDraft],
   )
   // En pause, le graphique ignore les logs arrivés après le clic.
+  // Masqué, on ne prépare ni l'axe ni les comptes.
   const chartSource = useMemo(
-    () => logsAtPause(logs, paused, pauseHeadId),
-    [logs, paused, pauseHeadId],
+    () => (chart.visible ? logsAtPause(logs, paused, pauseHeadId) : EMPTY_LOGS),
+    [chart.visible, logs, paused, pauseHeadId],
   )
   // Les autres filtres modifient les courbes. La période, elle, recadre l'axe.
   const chartLogs = useMemo(
     () =>
-      filterLogs(
-        chartSource,
-        { ...filters, period: null },
-        { field, value: deferredDraft },
-      ),
-    [chartSource, filters, field, deferredDraft],
+      chart.visible
+        ? filterLogs(
+            chartSource,
+            { ...filters, period: null },
+            { field, value: deferredDraft },
+          )
+        : EMPTY_LOGS,
+    [chart.visible, chartSource, filters, field, deferredDraft],
   )
 
   const pause = () => {
@@ -111,17 +130,31 @@ export default function App() {
             onPause={pause}
             onResume={resume}
             onExport={() => downloadCsv(csvFilename(), logsToCsv(filtered))}
-          />
-          <LogChart
-            logs={chartSource}
-            countedLogs={chartLogs}
-            period={filters.period}
-            onSelectRange={(from, to) =>
-              setCriteria((current) =>
-                criteriaWithCustomRange(current, from, to),
-              )
+            chartVisible={chart.visible}
+            onToggleChart={() =>
+              setChart((current) => ({ ...current, visible: !current.visible }))
             }
           />
+          {chart.visible ? (
+            <LogChart
+              logs={chartSource}
+              countedLogs={chartLogs}
+              period={filters.period}
+              group={chart.group}
+              bucketMs={chart.bucketMs}
+              onGroup={(group) =>
+                setChart((current) => ({ ...current, group }))
+              }
+              onBucketMs={(bucketMs) =>
+                setChart((current) => ({ ...current, bucketMs }))
+              }
+              onSelectRange={(from, to) =>
+                setCriteria((current) =>
+                  criteriaWithCustomRange(current, from, to),
+                )
+              }
+            />
+          ) : null}
           <div className={styles.workspace}>
             <LogTable
               logs={filtered}

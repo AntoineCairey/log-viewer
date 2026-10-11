@@ -5,8 +5,11 @@ import {
   type PointerEvent as ReactPointerEvent,
 } from 'react'
 import {
+  CHART_BUCKET_OPTIONS,
   buildLogChartData,
+  isLogChartGroup,
   rangeFromFractions,
+  type ChartBucketMs,
   type LogChartGroup,
 } from '../lib/logChartSeries.ts'
 import { resolvePeriodBounds, type PeriodFilter } from '../lib/filterLogs.ts'
@@ -24,14 +27,6 @@ const GROUPS: readonly { value: LogChartGroup; label: string }[] = [
   { value: 'service', label: 'Service' },
   { value: 'status', label: 'Statut HTTP' },
 ]
-
-const BUCKETS = [
-  { ms: 1_000, label: '1 s' },
-  { ms: 5_000, label: '5 s' },
-  { ms: 15_000, label: '15 s' },
-  { ms: 30_000, label: '30 s' },
-  { ms: 60_000, label: '1 min' },
-] as const
 
 const dateFormat = new Intl.DateTimeFormat('fr-FR', {
   day: '2-digit',
@@ -53,6 +48,10 @@ type LogChartProps = {
   logs: readonly LogEntry[]
   countedLogs: readonly LogEntry[]
   period: PeriodFilter | null
+  group: LogChartGroup
+  bucketMs: ChartBucketMs
+  onGroup: (group: LogChartGroup) => void
+  onBucketMs: (bucketMs: ChartBucketMs) => void
   onSelectRange: (from: number, to: number) => void
 }
 
@@ -60,15 +59,17 @@ export function LogChart({
   logs,
   countedLogs,
   period,
+  group,
+  bucketMs,
+  onGroup,
+  onBucketMs,
   onSelectRange,
 }: LogChartProps) {
-  const [group, setGroup] = useState<LogChartGroup>('level')
-  const [bucketMs, setBucketMs] =
-    useState<(typeof BUCKETS)[number]['ms']>(5_000)
   const [hoverIndex, setHoverIndex] = useState<number | null>(null)
   const [drag, setDrag] = useState<Drag | null>(null)
   const bucketLabel =
-    BUCKETS.find((option) => option.ms === bucketMs)?.label ?? '5 s'
+    CHART_BUCKET_OPTIONS.find((option) => option.ms === bucketMs)?.label ??
+    '5 s'
   const bounds = useMemo(
     () => resolvePeriodBounds(period, countedLogs),
     [period, countedLogs],
@@ -136,6 +137,7 @@ export function LogChart({
 
   return (
     <section
+      id="log-chart"
       className={styles.section}
       aria-label="Graphique temporel des logs"
     >
@@ -151,15 +153,15 @@ export function LogChart({
                 aria-label="Granularité"
                 value={bucketMs}
                 onChange={(event) => {
-                  const next = BUCKETS.find(
+                  const next = CHART_BUCKET_OPTIONS.find(
                     (option) => option.ms === Number(event.target.value),
                   )
                   if (!next) return
-                  setBucketMs(next.ms)
+                  onBucketMs(next.ms)
                   setHoverIndex(null)
                 }}
               >
-                {BUCKETS.map((option) => (
+                {CHART_BUCKET_OPTIONS.map((option) => (
                   <option key={option.ms} value={option.ms}>
                     {option.label}
                   </option>
@@ -175,8 +177,8 @@ export function LogChart({
                 aria-label="Regrouper par"
                 value={group}
                 onChange={(event) => {
-                  if (!isGroup(event.target.value)) return
-                  setGroup(event.target.value)
+                  if (!isLogChartGroup(event.target.value)) return
+                  onGroup(event.target.value)
                   setHoverIndex(null)
                 }}
               >
@@ -370,10 +372,6 @@ export function LogChart({
       )}
     </section>
   )
-}
-
-function isGroup(value: string): value is LogChartGroup {
-  return GROUPS.some((option) => option.value === value)
 }
 
 function xForTime(value: number, start: number, end: number): number {
