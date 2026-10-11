@@ -16,7 +16,11 @@ const log: LogEntry = {
 
 describe('logsToCsv', () => {
   it('écrit les logs filtrés avec un en-tête, du plus récent au plus ancien', () => {
-    const older: LogEntry = { ...log, id: 'plus-ancien', message: 'Order created' }
+    const older: LogEntry = {
+      ...log,
+      id: 'plus-ancien',
+      message: 'Order created',
+    }
 
     expect(logsToCsv([log, older])).toBe(
       [
@@ -52,6 +56,8 @@ describe('logsToCsv', () => {
 
 describe('csvFilename', () => {
   it('date le fichier à la minute', () => {
-    expect(csvFilename(new Date(2026, 9, 11, 1, 16))).toBe('logs-20261011-0116.csv')
+    expect(csvFilename(new Date(2026, 9, 11, 1, 16))).toBe(
+      'logs-20261011-0116.csv',
+    )
   })
 })
