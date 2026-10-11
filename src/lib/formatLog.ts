@@ -40,11 +40,13 @@ export function formatLogDate(timestamp: string): string {
 export function formatLogTime(timestamp: string): string {
   const date = new Date(timestamp)
   if (Number.isNaN(date.getTime())) return ''
+  // Les millisecondes viennent de la chaîne ISO : le formateur ne les garde pas.
   const fraction = timestamp.match(/\.(\d{3})/)
   const time = timeFormat.format(date)
   return fraction ? `${time}.${fraction[1]}` : time
 }
 
+// 5xx : server. 4xx : client. Le reste : ok. Le CSS lit ce data-tone.
 export function httpStatusTone(status: number): 'ok' | 'client' | 'server' {
   if (status >= 500) return 'server'
   if (status >= 400) return 'client'

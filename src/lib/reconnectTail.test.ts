@@ -1,6 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { LOG_BUFFER_LIMIT } from './prependCapped.ts'
-import { reconnectTail } from './reconnectTail.ts'
+import { API_TAIL_LIMIT, reconnectTail } from './reconnectTail.ts'
 
 describe('reconnectTail', () => {
   const now = 10_000
@@ -14,6 +13,6 @@ describe('reconnectTail', () => {
   })
 
   it('ne dépasse pas le plafond de l’API', () => {
-    expect(reconnectTail(now - 10 * 60_000, now)).toBe(LOG_BUFFER_LIMIT)
+    expect(reconnectTail(now - 10 * 60_000, now)).toBe(API_TAIL_LIMIT)
   })
 })

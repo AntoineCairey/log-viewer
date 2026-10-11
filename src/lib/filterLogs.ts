@@ -201,6 +201,7 @@ export function durationFromForm(criteria: FilterCriteria): {
   return { min, max, error: false }
 }
 
+// Traduit le formulaire. Une durée ou une période invalide n'est pas appliquée.
 export function filtersFromForm(criteria: FilterCriteria): Filters {
   const duration = durationFromForm(criteria)
   return {
@@ -214,6 +215,7 @@ export function filtersFromForm(criteria: FilterCriteria): Filters {
   }
 }
 
+// Le glisser du graphique pose une période custom, au format datetime-local.
 export function criteriaWithCustomRange(
   criteria: FilterCriteria,
   from: number,
@@ -228,6 +230,8 @@ export function criteriaWithCustomRange(
   }
 }
 
+// Passe 1 : niveau, service, statut, durée, texte (ET entre eux).
+// Passe 2 : la période, calée sur ce qui reste — voir resolvePeriodBounds.
 export function filterLogs(
   logs: readonly LogEntry[],
   filters: Filters,
@@ -322,6 +326,8 @@ export function formatDatetimeLocal(ms: number): string {
   return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}T${pad(date.getHours())}:${pad(date.getMinutes())}:${pad(date.getSeconds())}`
 }
 
+// datetime-local n'a pas de fuseau : on reconstruit une date locale.
+// Une date que Date corrigerait (31 février) est rejetée.
 export function parseDatetimeLocal(value: string): number | null {
   const match = /^(\d{4})-(\d{2})-(\d{2})T(\d{2}):(\d{2})(?::(\d{2}))?$/.exec(
     value,
@@ -425,6 +431,8 @@ function matchesText(log: LogEntry, filter: TextFilter): boolean {
   return filter.exact ? log.id === filter.value : includes(log.id, filter.value)
 }
 
+// last : [plus récent de `base` − durée, +∞[. range : bornes saisies.
+// null si pas de période, ou si la plage est vide ou inversée.
 export function resolvePeriodBounds(
   period: PeriodFilter | null,
   base: readonly LogEntry[],

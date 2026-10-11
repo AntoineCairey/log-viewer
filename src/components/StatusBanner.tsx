@@ -22,6 +22,7 @@ function apiHost(): string {
   }
 }
 
+// Reflète l'état du flux. Sans URL d'API, le hook ne se connecte pas.
 export function StatusBanner({ status, configured }: StatusBannerProps) {
   const host = apiHost()
   const apiLabel = !configured

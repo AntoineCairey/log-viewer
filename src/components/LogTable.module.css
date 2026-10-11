@@ -15,11 +15,11 @@
 }
 
 /* Les colonnes gardent leur largeur. Le surplus se répartit en espacement,
-   plafonné vers 1 200 px (41 px entre les colonnes) ; au-delà, seule Request ID
-   s'élargit. En dessous de 912 px, le tableau défile. */
+   plafonné vers 1 211 px (41 px entre les colonnes) ; au-delà, seule Request ID
+   s'élargit. En dessous de 924 px, le tableau défile. */
 .table {
-  --columns: 120px 92px 124px 200px 92px 72px 80px minmax(132px, 1fr);
-  --column-gap: clamp(0px, calc((100% - 912px) / 7), 41px);
+  --columns: 132px 92px 124px 200px 92px 72px 80px minmax(132px, 1fr);
+  --column-gap: clamp(0px, calc((100% - 924px) / 7), 41px);
   display: block;
   width: 100%;
   min-width: max-content;
@@ -67,6 +67,11 @@
   font-weight: 600;
   letter-spacing: 0.04em;
   text-transform: uppercase;
+}
+
+.table th:first-child,
+.table td:first-child {
+  padding-left: 24px;
 }
 
 .table th:nth-child(5),

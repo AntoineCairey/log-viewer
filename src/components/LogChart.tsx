@@ -14,6 +14,10 @@ import { formatCount } from '../lib/formatLog.ts'
 import type { LogEntry } from '../types/log.ts'
 import styles from './LogChart.module.css'
 
+// Courbes en SVG (viewBox 1000×100, étiré en CSS).
+// Le calque transparent capte le survol et le glisser. Le glisser devient
+// une période, renvoyée à App par onSelectRange.
+// `logs` cale l'axe des temps. `countedLogs` alimente les courbes.
 const GROUPS: readonly { value: LogChartGroup; label: string }[] = [
   { value: 'total', label: 'Total' },
   { value: 'level', label: 'Niveau' },
@@ -60,11 +64,11 @@ export function LogChart({
 }: LogChartProps) {
   const [group, setGroup] = useState<LogChartGroup>('level')
   const [bucketMs, setBucketMs] =
-    useState<(typeof BUCKETS)[number]['ms']>(1_000)
+    useState<(typeof BUCKETS)[number]['ms']>(5_000)
   const [hoverIndex, setHoverIndex] = useState<number | null>(null)
   const [drag, setDrag] = useState<Drag | null>(null)
   const bucketLabel =
-    BUCKETS.find((option) => option.ms === bucketMs)?.label ?? '1 s'
+    BUCKETS.find((option) => option.ms === bucketMs)?.label ?? '5 s'
   const bounds = useMemo(
     () => resolvePeriodBounds(period, countedLogs),
     [period, countedLogs],

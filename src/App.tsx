@@ -20,6 +20,8 @@ import {
 import type { LogEntry } from './types/log.ts'
 import styles from './App.module.css'
 
+// Croise le buffer du flux avec les filtres, puis le distribue aux vues.
+// Le tableau et l'export reçoivent `filtered`. Le graphique reçoit `chartLogs`.
 export default function App() {
   const { logs, status, configured } = useLogStream()
   const [selected, setSelected] = useState<LogEntry | null>(null)
@@ -48,6 +50,8 @@ export default function App() {
     [logs, filters, field, deferredDraft],
   )
 
+  // Épingle la recherche comme filtre durable et vide le champ.
+  // exact : égalité, depuis une cellule du tableau ou le panneau de détail.
   const pin = (nextField: TextField, value: string, exact: boolean) => {
     setCriteria((current) => pinText(current, nextField, value, exact))
     setDraft('')

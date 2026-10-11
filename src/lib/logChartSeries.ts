@@ -1,6 +1,9 @@
 import { formatService } from './formatLog.ts'
 import { LOG_LEVELS, type LogEntry, type LogLevel } from '../types/log.ts'
 
+// Compte les logs par tranche et prépare séries, axe Y et graduations.
+// `domainLogs` donne l'étendue par défaut (du plus ancien au plus récent).
+// `countedLogs` est ce qu'on additionne. `window` zoome sur la période choisie.
 export const LOG_CHART_BUCKET_MS = 1_000
 
 export type LogChartGroup = 'total' | 'level' | 'service' | 'status'
@@ -131,6 +134,7 @@ export function buildLogChartData(
     totals[seriesIndex] = (totals[seriesIndex] ?? 0) + 1
   }
 
+  // Une série sans aucun log dans la fenêtre n'est pas dessinée.
   const series = definitions.flatMap((definition, index) => {
     const total = totals[index] ?? 0
     const seriesValues = values[index]
@@ -159,6 +163,7 @@ export function buildLogChartData(
   }
 }
 
+// Glisser sur le graphe : deux fractions de la largeur, bornes à la seconde.
 export function rangeFromFractions(
   startMs: number,
   endMs: number,
@@ -175,6 +180,7 @@ export function rangeFromFractions(
   return { from, to }
 }
 
+// Sans période, l'axe couvre tout le buffer. Sinon il se cale sur `window`.
 function chartBounds(
   logs: readonly LogEntry[],
   bucketMs: number,
@@ -256,6 +262,7 @@ function floorBucket(timestamp: number, bucketMs: number): number {
   return Math.floor(timestamp / bucketMs) * bucketMs
 }
 
+// Graduations en 1, 2 ou 5 × 10ⁿ, pour que l'axe reste lisible.
 function yScale(peak: number): { yMax: number; yTicks: number[] } {
   if (peak <= 0) return { yMax: 1, yTicks: [0, 1] }
   const rawStep = peak / 5

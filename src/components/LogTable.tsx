@@ -48,6 +48,8 @@ export function LogTable({
   const scrollRef = useRef<HTMLDivElement>(null)
   const previousFirstIdRef = useRef<string | null>(null)
   const awayRef = useRef(false)
+  // Refs miroir : le scroll et les layout effects lisent le rendu en cours
+  // sans se ré-abonner à chaque lot de logs.
   const pausedRef = useRef(paused)
   const logsRef = useRef(logs)
   const onPausedChangeRef = useRef(onPausedChange)
@@ -231,6 +233,7 @@ function LogRow({
   onFilterUser: (log: LogEntry) => void
   onFilterRequest: (log: LogEntry) => void
 }) {
+  // Mise en évidence : error / critical, et les durées à partir de 1,5 s.
   const heavy = log.level === 'error' || log.level === 'critical'
   const slow = log.durationMs >= 1500
 

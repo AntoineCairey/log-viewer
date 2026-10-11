@@ -64,6 +64,20 @@ describe('LogChart', () => {
     })
     expect(screen.getByText('payment')).toBeInTheDocument()
 
+    expect(screen.getByRole('combobox', { name: 'Granularité' })).toHaveValue(
+      '5000',
+    )
+    expect(
+      screen.getByText('Nombre de logs par tranche de 5 s'),
+    ).toBeInTheDocument()
+
+    fireEvent.change(screen.getByRole('combobox', { name: 'Granularité' }), {
+      target: { value: '1000' },
+    })
+    expect(
+      screen.getByText('Nombre de logs par tranche de 1 s'),
+    ).toBeInTheDocument()
+
     fireEvent.change(screen.getByRole('combobox', { name: 'Granularité' }), {
       target: { value: '5000' },
     })

@@ -58,6 +58,8 @@ export function FilterBar({
   const chips = activeChips(filters)
   const fieldOption = textFieldOption(field)
 
+  // Options vues dans le buffer, plus celles déjà cochées : un filtre
+  // ne doit pas disparaître du menu quand ses logs sortent du plafond.
   const services = useMemo(() => {
     const values = new Set(logs.map((log) => log.service))
     for (const service of criteria.services) values.add(service)
@@ -577,6 +579,8 @@ function MenuFooter({ onReset }: { onReset: () => void }) {
   )
 }
 
+// « last » n'a pas de saisie : on montre la fenêtre calculée
+// depuis le log le plus récent.
 function shownPeriodBound(
   criteria: FilterCriteria,
   newest: number | null,

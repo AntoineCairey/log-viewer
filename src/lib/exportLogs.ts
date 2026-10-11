@@ -47,6 +47,7 @@ export function csvFilename(now = new Date()): string {
 }
 
 export function downloadCsv(filename: string, csv: string): void {
+  // BOM UTF-8 : Excel ouvre le fichier avec les accents.
   const blob = new Blob([`\uFEFF${csv}`], { type: 'text/csv;charset=utf-8' })
   const url = URL.createObjectURL(blob)
   const link = document.createElement('a')
