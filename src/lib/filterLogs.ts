@@ -10,6 +10,7 @@ export const PERIOD_PRESETS = [
   { ms: 30_000, label: '30 dernières s' },
   { ms: 60_000, label: 'Dernière minute' },
   { ms: 120_000, label: '2 dernières min' },
+  { ms: 300_000, label: '5 dernières min' },
 ] as const
 
 export const DURATION_PRESETS = [

@@ -26,16 +26,10 @@
   color: var(--text);
 }
 
-.host,
 .api {
   margin: 0;
   font-size: 13px;
   color: var(--text-muted);
-}
-
-.host {
-  font-family: var(--mono);
-  font-size: 12px;
 }
 
 .status {

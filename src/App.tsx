@@ -7,6 +7,7 @@ import { ResultsBar } from './components/ResultsBar.tsx'
 import { StatusBanner } from './components/StatusBanner.tsx'
 import { useLogStream } from './hooks/useLogStream.ts'
 import { useStoredState } from './hooks/useStoredState.ts'
+import { countPendingLogs } from './lib/countPendingLogs.ts'
 import { csvFilename, downloadCsv, logsToCsv } from './lib/exportLogs.ts'
 import { logsAtPause } from './lib/logsAtPause.ts'
 import {
@@ -31,8 +32,9 @@ import styles from './App.module.css'
 const EMPTY_LOGS: readonly LogEntry[] = []
 
 // Croise le buffer du flux avec les filtres, puis le distribue aux vues.
-// Le tableau et l'export reçoivent `filtered`. Le graphique reçoit `chartSource`,
-// figé au clic sur Pause, et `chartLogs` pour les courbes.
+// En pause, `viewedLogs` s'arrête au log le plus récent du clic. Le tableau,
+// l'export et le graphique s'en servent. Le buffer `logs` continue de grandir :
+// le total en mémoire et les logs en attente lisent ce flux complet.
 export default function App() {
   const { logs, status, configured } = useLogStream()
   const [selected, setSelected] = useState<LogEntry | null>(null)
@@ -40,7 +42,6 @@ export default function App() {
   // Le scroll ne suspend que le défilement de la liste : LogTable le gère seul.
   const [paused, setPaused] = useState(false)
   const [pauseHeadId, setPauseHeadId] = useState<string | null>(null)
-  const [pending, setPending] = useState(0)
   const [criteria, setCriteria] = useStoredState(
     readFilterCriteria,
     writeFilterCriteria,
@@ -55,27 +56,33 @@ export default function App() {
   // ce calcul si un lot de logs arrive en même temps que la frappe.
   const deferredDraft = useDeferredValue(draft)
   const filters = useMemo(() => filtersFromForm(criteria), [criteria])
+  // En pause, tableau, export et graphique ignorent les logs arrivés après le clic.
+  const viewedLogs = useMemo(
+    () => logsAtPause(logs, paused, pauseHeadId),
+    [logs, paused, pauseHeadId],
+  )
   const filtered = useMemo(
-    () => filterLogs(logs, filters, { field, value: deferredDraft }),
-    [logs, filters, field, deferredDraft],
+    () => filterLogs(viewedLogs, filters, { field, value: deferredDraft }),
+    [viewedLogs, filters, field, deferredDraft],
   )
-  // En pause, le graphique ignore les logs arrivés après le clic.
+  // Hors pause, la liste affichée est déjà le flux filtré : rien n'est en attente.
+  const pending = useMemo(() => {
+    if (!paused) return 0
+    const live = filterLogs(logs, filters, { field, value: deferredDraft })
+    return countPendingLogs(live, logs, pauseHeadId)
+  }, [paused, logs, filters, field, deferredDraft, pauseHeadId])
   // Masqué, on ne prépare ni l'axe ni les comptes.
-  const chartSource = useMemo(
-    () => (chart.visible ? logsAtPause(logs, paused, pauseHeadId) : EMPTY_LOGS),
-    [chart.visible, logs, paused, pauseHeadId],
-  )
   // Les autres filtres modifient les courbes. La période, elle, recadre l'axe.
   const chartLogs = useMemo(
     () =>
       chart.visible
         ? filterLogs(
-            chartSource,
+            viewedLogs,
             { ...filters, period: null },
             { field, value: deferredDraft },
           )
         : EMPTY_LOGS,
-    [chart.visible, chartSource, filters, field, deferredDraft],
+    [chart.visible, viewedLogs, filters, field, deferredDraft],
   )
 
   const pause = () => {
@@ -137,7 +144,7 @@ export default function App() {
           />
           {chart.visible ? (
             <LogChart
-              logs={chartSource}
+              logs={viewedLogs}
               countedLogs={chartLogs}
               period={filters.period}
               group={chart.group}
@@ -165,7 +172,6 @@ export default function App() {
               noMatch={logs.length > 0 && filtered.length === 0}
               onClearFilters={clearFilters}
               paused={paused}
-              onPendingChange={setPending}
             />
             {selected ? (
               <LogDetail

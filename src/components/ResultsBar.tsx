@@ -1,7 +1,6 @@
 import { ChartLine, Download, Pause, Play } from 'lucide-react'
 import { followStatusLabel, formatCount } from '../lib/formatLog.ts'
 import { resultsCountLabel } from '../lib/filterLogs.ts'
-import { LOG_BUFFER_LIMIT } from '../lib/prependCapped.ts'
 import styles from './ResultsBar.module.css'
 
 type ResultsBarProps = {
@@ -34,8 +33,7 @@ export function ResultsBar({
       <div className={styles.summary}>
         <span className={styles.count}>{resultsCountLabel(matched)}</span>
         <span className={styles.memory}>
-          sur {formatCount(total)} en mémoire (max{' '}
-          {formatCount(LOG_BUFFER_LIMIT)})
+          sur {formatCount(total)} en mémoire
         </span>
       </div>
       <div className={styles.follow}>

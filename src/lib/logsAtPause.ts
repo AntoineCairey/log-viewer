@@ -1,6 +1,6 @@
-// Jeu du graphique pendant la pause. `headId` est le log le plus récent au clic.
-// Les arrivées suivantes restent hors du graphique. Si ce repère a été évincé
-// par le plafond, le graphique se vide plutôt que de reprendre le direct.
+// Jeu affiché pendant la pause. `headId` est le log le plus récent au clic.
+// Les arrivées suivantes restent hors du tableau et du graphique. Si ce repère
+// a été évincé par le plafond, la vue se vide plutôt que de reprendre le direct.
 export function logsAtPause<T extends { id: string }>(
   logs: readonly T[],
   paused: boolean,
