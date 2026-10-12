@@ -1,7 +1,6 @@
 import { ArrowUp } from 'lucide-react'
 import { useLayoutEffect, useRef, useState } from 'react'
 import { useVirtualizer } from '@tanstack/react-virtual'
-import { countNewerLogs } from '../lib/countNewerLogs.ts'
 import {
   formatDuration,
   formatLogDate,
@@ -26,17 +25,15 @@ type LogTableProps = {
   noMatch: boolean
   onClearFilters: () => void
   paused: boolean
-  onPendingChange: (pending: number) => void
 }
 
 // Tableau virtualisé : seules les lignes visibles (plus une marge) sont dans le DOM.
 // Les nouveaux logs arrivent en haut. En direct, en haut, on les voit apparaître.
-// Deux façons de figer les lignes regardées, en décalant le scroll de la hauteur
-// des arrivées. Le flux continue d'arriver dans les deux cas.
-// - Scroll : seul le défilement s'arrête. Un bouton flottant, ou le retour tout
-//   en haut, le reprend. Le graphique, lui, reste en direct.
-// - Bouton Pause : la liste et le graphique sont figés. Seul « Revenir en direct »
-//   les relâche. Remonter en haut ne suffit pas.
+// - Scroll : seul le défilement s'arrête, en décalant le scroll de la hauteur
+//   des arrivées. Elles restent dans la liste, au-dessus. Un bouton flottant,
+//   ou le retour tout en haut, reprend le suivi. Le graphique reste en direct.
+// - Bouton Pause : App retire les logs arrivés après le clic. Ce tableau ne
+//   les reçoit pas. Seul « Revenir en direct » les réaffiche et ramène en haut.
 export function LogTable({
   logs,
   selectedId,
@@ -46,31 +43,17 @@ export function LogTable({
   noMatch,
   onClearFilters,
   paused,
-  onPendingChange,
 }: LogTableProps) {
   const scrollRef = useRef<HTMLDivElement>(null)
   const previousFirstIdRef = useRef<string | null>(null)
   const awayRef = useRef(false)
-  // Refs miroir : le scroll et les layout effects lisent le rendu en cours
-  // sans se ré-abonner à chaque lot de logs.
+  // Ref miroir : le scroll et les layout effects lisent la pause du rendu
+  // en cours sans se ré-abonner à chaque lot de logs.
   const pausedRef = useRef(paused)
-  const logsRef = useRef(logs)
-  const onPendingChangeRef = useRef(onPendingChange)
   // Vrai quand l'utilisateur a quitté le haut sans passer par le bouton Pause.
   const [detached, setDetached] = useState(false)
-  // Premier log au moment où l'utilisateur a quitté le haut. null : en direct.
-  const [anchorId, setAnchorId] = useState<string | null>(null)
-  const anchorIdRef = useRef<string | null>(null)
 
   pausedRef.current = paused
-  logsRef.current = logs
-  onPendingChangeRef.current = onPendingChange
-
-  const setAnchor = (id: string | null) => {
-    if (anchorIdRef.current === id) return
-    anchorIdRef.current = id
-    setAnchorId(id)
-  }
 
   // useVirtualizer mutates its instance in place; React Compiler skips this
   // component on purpose. Silence until TanStack ships a compatible API.
@@ -84,8 +67,8 @@ export function LogTable({
     useFlushSync: false,
   })
 
-  // Avant l'affichage : si des logs ont été ajoutés en haut pendant la pause,
-  // on descend le scroll de leur hauteur.
+  // Avant l'affichage : si des logs ont été ajoutés en haut alors que
+  // l'utilisateur a quitté le haut, on descend le scroll de leur hauteur.
   // Si l'ancien premier log a disparu, la liste a été filtrée : on revient
   // en haut, au lieu de traiter tout le tableau comme de nouveaux logs.
   useLayoutEffect(() => {
@@ -93,30 +76,15 @@ export function LogTable({
     const previousFirstId = previousFirstIdRef.current
     previousFirstIdRef.current = logs[0]?.id ?? null
 
-    if (!scroller || previousFirstId === null) {
-      if (pausedRef.current && anchorIdRef.current === null) {
-        setAnchor(logs[0]?.id ?? null)
-      }
-      return
-    }
+    if (!scroller || previousFirstId === null) return
 
     const added = logs.findIndex((log) => log.id === previousFirstId)
     if (added === -1) {
       awayRef.current = false
       scroller.scrollTop = 0
       // Un filtre ne lève pas la pause : on reprend le suivi seulement en direct.
-      if (pausedRef.current) {
-        setAnchor(logs[0]?.id ?? null)
-      } else {
-        setAnchor(null)
-        setDetached(false)
-      }
+      if (!pausedRef.current) setDetached(false)
       return
-    }
-    // Ancre posée avant le scroll : le handler ne doit pas prendre le nouveau
-    // premier log pour repère si le lot arrive en même temps que la pause.
-    if (pausedRef.current && anchorIdRef.current === null) {
-      setAnchor(previousFirstId)
     }
     const atTop = scroller.scrollTop < LIVE_THRESHOLD_PX
     if (atTop && !pausedRef.current) return
@@ -126,21 +94,15 @@ export function LogTable({
     }
   }, [logs])
 
-  // Le bouton Pause fige la lecture. Revenir en direct ramène en haut.
+  // Revenir en direct ramène en haut et reprend le défilement.
   useLayoutEffect(() => {
-    if (paused) {
-      if (anchorIdRef.current === null) {
-        setAnchor(logsRef.current[0]?.id ?? null)
-      }
-      return
-    }
+    if (paused) return
 
     const scroller = scrollRef.current
     awayRef.current = false
     if (scroller && scroller.scrollTop >= LIVE_THRESHOLD_PX) {
       scroller.scrollTo({ top: 0 })
     }
-    setAnchor(null)
     setDetached(false)
   }, [paused])
 
@@ -155,20 +117,17 @@ export function LogTable({
       awayRef.current = false
       // La pause du bouton ne se lève qu'avec « Revenir en direct ».
       if (pausedRef.current) return
-      setAnchor(null)
       setDetached(false)
       return
     }
 
     awayRef.current = true
-    if (anchorIdRef.current === null) setAnchor(logsRef.current[0]?.id ?? null)
     if (!pausedRef.current) setDetached(true)
   }
 
   const resumeScroll = () => {
     const scroller = scrollRef.current
     awayRef.current = false
-    setAnchor(null)
     setDetached(false)
     if (scroller && scroller.scrollTop >= LIVE_THRESHOLD_PX) {
       scroller.scrollTo({ top: 0 })
@@ -178,11 +137,6 @@ export function LogTable({
   const items = virtualizer.getVirtualItems()
   const paddingTop = items[0]?.start ?? 0
   const paddingBottom = virtualizer.getTotalSize() - (items.at(-1)?.end ?? 0)
-  const pending = countNewerLogs(logs, anchorId)
-
-  useLayoutEffect(() => {
-    onPendingChangeRef.current(pending)
-  }, [pending])
 
   return (
     <div className={styles.frame}>

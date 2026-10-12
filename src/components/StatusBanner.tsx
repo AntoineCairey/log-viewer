@@ -12,19 +12,8 @@ const STATUS_LABEL: Record<ConnectionStatus, string> = {
   reconnecting: 'Reconnexion…',
 }
 
-function apiHost(): string {
-  const baseUrl = import.meta.env.VITE_LOGS_API_URL
-  if (!baseUrl) return ''
-  try {
-    return new URL(baseUrl).host
-  } catch {
-    return baseUrl
-  }
-}
-
 // Reflète l'état du flux. Sans URL d'API, le hook ne se connecte pas.
 export function StatusBanner({ status, configured }: StatusBannerProps) {
-  const host = apiHost()
   const apiLabel = !configured
     ? 'URL manquante'
     : status === 'open'
@@ -35,7 +24,6 @@ export function StatusBanner({ status, configured }: StatusBannerProps) {
     <header className={styles.banner}>
       <div className={styles.identity}>
         <h1>Suivi des logs</h1>
-        {host ? <p className={styles.host}>{host}</p> : null}
       </div>
       <div className={styles.status}>
         <p className={styles.api}>{apiLabel}</p>

@@ -16,7 +16,7 @@ describe('logsAtPause', () => {
     expect(logsAtPause(logs, true, 'd')).toBe(logs)
   })
 
-  it('vide le graphique sans repère ou quand il a été évincé', () => {
+  it('vide la vue sans repère ou quand il a été évincé', () => {
     expect(logsAtPause(logs, true, null)).toEqual([])
     expect(logsAtPause(logs, true, 'z')).toEqual([])
   })
